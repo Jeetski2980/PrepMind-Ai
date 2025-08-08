@@ -1,3 +1,4 @@
+// tailwind.config.js
 export default {
   darkMode: ["class"],
   content: ["./client/**/*.{js,jsx}"],
@@ -63,25 +64,31 @@ export default {
       },
       keyframes: {
         "accordion-down": {
-          from: {
-            height: "0",
-          },
-          to: {
-            height: "var(--radix-accordion-content-height)",
-          },
+          from: { height: "0" },
+          to: { height: "var(--radix-accordion-content-height)" },
         },
         "accordion-up": {
-          from: {
-            height: "var(--radix-accordion-content-height)",
-          },
-          to: {
-            height: "0",
-          },
+          from: { height: "var(--radix-accordion-content-height)" },
+          to: { height: "0" },
         },
       },
       animation: {
         "accordion-down": "accordion-down 0.2s ease-out",
         "accordion-up": "accordion-up 0.2s ease-out",
+      },
+      boxShadow: {
+        card: "0 4px 10px rgba(0, 0, 0, 0.08)",
+        hover: "0 6px 14px rgba(0, 0, 0, 0.1)",
+      },
+      fontSize: {
+        "heading-1": ["2.25rem", { lineHeight: "2.5rem" }],
+        "heading-2": ["1.875rem", { lineHeight: "2.25rem" }],
+      },
+      scale: {
+        102: "1.02",
+      },
+      backgroundImage: {
+        "emerald-gradient": "linear-gradient(to right, #10b981, #34d399)",
       },
     },
   },
