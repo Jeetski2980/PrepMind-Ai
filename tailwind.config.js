@@ -11,6 +11,7 @@ export default {
         "2xl": "1400px",
       },
     },
+    // Extend the default theme with custom colors, fonts, etc.
     extend: {
       colors: {
         border: "hsl(var(--border))",

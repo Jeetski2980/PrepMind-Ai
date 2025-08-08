@@ -4,3 +4,4 @@ export default {
     autoprefixer: {},
   },
 };
+// This configuration file is used by PostCSS to apply Tailwind CSS and Autoprefixer
