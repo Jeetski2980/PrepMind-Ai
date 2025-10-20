@@ -14,7 +14,10 @@ export default ({ mode }) => {
     },
     resolve: {
       alias: {
+        // You already had "@": keep it
         "@": path.resolve(__dirname, "./client"),
+        // NEW: add 'client' → this lets imports like "client/components/Layout" work
+        "client": path.resolve(__dirname, "./client"),
       },
     },
     build: {

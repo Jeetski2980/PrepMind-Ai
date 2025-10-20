@@ -6,7 +6,7 @@ import path from "path";
 import { fileURLToPath } from "url";
 
 import { generateChatResponse } from "./routes/chat.js";
-import { generateQuestions } from "./routes/questions.js";
+import { generateQuestions } from "./routes/question.js"; // NOTE: singular "question.js"
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -17,15 +17,13 @@ const PORT = Number(process.env.PORT || 10000);
 app.use(cors());
 app.use(express.json());
 
-// --- Debug logging (leave on for now) ---
+// Debug logging (helpful locally + on Render)
 app.use((req, _res, next) => {
   console.log(`[REQ] ${req.method} ${req.url}`);
   next();
 });
 
-/* =========================
-   API ROUTES (keep above SPA)
-   ========================= */
+/* ========= API (keep above SPA) ========= */
 app.get("/api/health", (_req, res) => {
   res.json({ ok: true, port: PORT });
 });
@@ -55,30 +53,24 @@ app.post("/api/generate-questions", async (req, res) => {
   }
 });
 
-/* =========================
-   STATIC + SPA FALLBACK
-   ========================= */
+/* ========= Static + SPA fallback ========= */
 const distDir = path.resolve(__dirname, "../dist");
 
-// Serve static files (JS/CSS/fonts)
+// Serve static assets (JS/CSS/fonts)
 app.use(express.static(distDir, { extensions: ["html"] }));
 
-// Helper to send index.html
-const sendIndex = (_req, res) => {
-  res.sendFile(path.join(distDir, "index.html"));
-};
+// Helper to send the SPA entry
+const sendIndex = (_req, res) => res.sendFile(path.join(distDir, "index.html"));
 
-// Explicit root handlers
+// Root handlers
 app.get("/", sendIndex);
-app.head("/", (_req, res) => res.sendStatus(200)); // handle HEAD /
+app.head("/", (_req, res) => res.sendStatus(200));
 
-// SPA fallback for any non-API path (GET or HEAD)
+// Non-API routes → SPA (GET + HEAD)
 app.get(/^\/(?!api).*/, sendIndex);
 app.head(/^\/(?!api).*/, (_req, res) => res.sendStatus(200));
 
-/* =========================
-   START SERVER
-   ========================= */
+/* ========= Start ========= */
 app.listen(PORT, () => {
   console.log(`✅ Server running at http://localhost:${PORT}`);
   console.log("Has GEMINI_CHAT_API_KEY?", Boolean(process.env.GEMINI_CHAT_API_KEY));

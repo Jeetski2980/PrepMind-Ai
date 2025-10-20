@@ -1,6 +1,6 @@
 import { Card, CardContent } from "@/components/ui/card";
 import { Brain, Code, Shield, Users, Zap, Heart, Settings } from "lucide-react";
-import Layout from "@/components/Layout";
+import Layout from "@/components/Layout.jsx";
 
 export default function About() {
   return (

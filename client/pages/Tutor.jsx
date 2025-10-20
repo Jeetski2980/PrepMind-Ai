@@ -4,7 +4,7 @@ import { Card } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
 import ApiKeyNoticeGoogle from "@/components/ApiKeyNoticeGoogle";
 import { MessageSquare, Send, Mic, MicOff, Volume2, VolumeX, User, Bot } from "lucide-react";
-import Layout from "@/components/Layout";
+import Layout from "@/components/Layout.jsx";
 import { InlineMath, BlockMath } from "react-katex";
 import "katex/dist/katex.min.css";
 

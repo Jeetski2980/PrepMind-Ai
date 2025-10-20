@@ -1,7 +1,7 @@
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Home, Search } from "lucide-react";
-import Layout from "@/components/Layout";
+import Layout from "@/components/Layout.jsx";
 
 export default function NotFound() {
   return (

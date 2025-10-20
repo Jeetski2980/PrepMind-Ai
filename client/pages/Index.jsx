@@ -11,7 +11,7 @@ import {
   Clock,
   Award,
 } from "lucide-react";
-import Layout from "@/components/Layout";
+import Layout from "@/components/Layout.jsx";
 
 export default function Index() {
   return (
