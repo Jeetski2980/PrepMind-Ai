@@ -1,8 +1,8 @@
 // server/services/gemini.js
 import { GoogleGenerativeAI } from "@google/generative-ai";
 
-const CHAT_MODEL = process.env.GEMINI_MODEL_CHAT || "gemini-2.5-flash";
-const QA_MODEL   = process.env.GEMINI_MODEL_QA   || "gemini-2.5-flash";
+const CHAT_MODEL = "gemini-2.5-flash";
+const QA_MODEL   = "gemini-2.5-flash";
 
 const CHAT_KEY = process.env.GEMINI_CHAT_API_KEY || "";
 const QA_KEY   = process.env.GEMINI_QA_API_KEY   || "";
