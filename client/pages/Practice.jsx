@@ -45,75 +45,42 @@ const TOPIC_OPTIONS = {
   "Computer Science A": ["Object-Oriented Programming","Data Structures","Algorithms","Program Design"],
 };
 
-/* ---------- Robust math rendering with nested-brace auto-wrap ---------- */
-/* ---------- Math rendering (robust + conservative) ---------- */
-/* Fixes common missing-backslash LaTeX and renders with KaTeX. */
-
-import "katex/dist/katex.min.css";
-
+/* ---------- Math rendering (EXACT copy from Tutor.jsx) ---------- */
 const renderTextWithMath = (text) => {
   if (text == null) return null;
   let s = String(text);
 
-  // Normalize \( … \) and \[ … \] to $…$ and $$…$$
+  // Normalize \( ... \) and \[ ... \]
   s = s
-    .replace(/\\\((.+?)\\\)/g, (_m, p1) => `$${p1}$`)
-    .replace(/\\\[(.+?)\\\]/gs, (_m, p1) => `$$${p1}$$`);
+    .replace(/\\\(([\s\S]+?)\\\)/g, (_m, p1) => `$${p1}$`)
+    .replace(/\\\[([\s\S]+?)\\\]/g, (_m, p1) => `$$${p1}$$`);
 
-  // --- Heuristic auto-fix when no $ is present (model forgot backslashes) ---
   if (!s.includes("$")) {
-    // Add missing backslashes for very common LaTeX words
-    const NEEDS_SLASH =
-      /\b(frac|sqrt|sum|int|infty|pi|theta|alpha|beta|gamma|delta|lambda|mu|sigma|leq|geq|neq|ne|cdot|times)\b/g;
-    s = s.replace(NEEDS_SLASH, "\\$1");
-
-    // Convert bare \frac a b  OR  \frac1n^2  into \frac{a}{b}
-    // 1) already-braced -> keep
-    // 2) no braces -> wrap next two tokens
-    s = s.replace(/\\frac\s*([^\s{]+)\s*([^\s{]+)/g, (_m, a, b) => `\\frac{${a}}{${b}}`);
-    // also normalize the proper braced case (idempotent)
-    s = s.replace(/\\frac\s*\{([^{}]+)\}\s*\{([^{}]+)\}/g, (_m, a, b) => `\\frac{${a}}{${b}}`);
-
-    // \sqrt a -> \sqrt{a}
-    s = s.replace(/\\sqrt\s*([^\s{][^\s]*)/g, (_m, a) => `\\sqrt{${a}}`);
-
-    // If we now see math-ish things, wrap the whole line in inline math
-    if (
-      /\\(frac|sqrt|sum|int|pi|theta|alpha|beta|gamma|delta|lambda|mu|sigma|leq|geq|neq|ne|infty|cdot|times)|[_^]/.test(
-        s
-      )
-    ) {
+    if (/^\s*\\[A-Za-z]/.test(s.trim())) {
       s = `$${s}$`;
+    } else {
+      const CHUNK =
+        /(\\frac\{[^{}]+\}\{[^{}]+\}|\\sqrt\{[^{}]+\}|\\hat\{[^{}]+\}|\\bar\{[^{}]+\}|\\vec\{[^{}]+\}|\\int[^ \n]*|\\sum[^ \n]*|\\lim[^ \n]*|\\log(?:_[^{\s]+|\([^)]*\))?|\\sin|\\cos|\\tan|\\pi|\\theta|\\alpha|\\beta|\\gamma|\\delta|\\lambda|\\mu|\\sigma|\\leq|\\geq|\\neq|\\ne)/g;
+      s = s.replace(CHUNK, (m) => `$${m}$`);
     }
   }
-  // -------------------------------------------------------------------------
 
-  // If $ are unbalanced, strip them to prevent KaTeX crash
-  const balanced = s.split("$").length % 2 === 1 ? s.replace(/\$/g, "") : s;
+  if (s.split("$").length % 2 === 0) {
+    s = s.replace(/\$/g, "");
+  }
 
-  // Split into text / $…$ / $$…$$
-  const parts = balanced.split(/(\$\$[\s\S]+?\$\$|\$[\s\S]*?\$)/g);
+  const parts = s.split(/(\$\$[\s\S]+?\$\$|\$[\s\S]+?\$)/g);
 
   return parts.map((part, i) => {
-    if (part.startsWith("$$") && part.endsWith("$")) {
-      // guard against malformed $$…$
-      return <span key={i}>{part}</span>;
-    }
     if (part.startsWith("$$") && part.endsWith("$$")) {
       const math = part.slice(2, -2);
-      try {
-        return <BlockMath key={i} math={math} />;
-      } catch {
-        return <span key={i}>{part}</span>;
-      }
+      try { return <BlockMath key={i} math={math} />; }
+      catch { return <span key={i}>{part}</span>; }
     }
     if (part.startsWith("$") && part.endsWith("$")) {
       const math = part.slice(1, -1);
-      try {
-        return <InlineMath key={i} math={math} />;
-      } catch {
-        return <span key={i}>{part}</span>;
-      }
+      try { return <InlineMath key={i} math={math} />; }
+      catch { return <span key={i}>{part}</span>; }
     }
     return (
       <span
@@ -125,7 +92,6 @@ const renderTextWithMath = (text) => {
     );
   });
 };
-
 
 /* ---------- Page ---------- */
 
@@ -284,7 +250,7 @@ export default function Practice() {
                         Test Type
                       </label>
                       <Select value={testType} onValueChange={setTestType}>
-                        <SelectTrigger className="dark:bg-black dark:border-white/50 dark:text-white">
+                        <SelectTrigger className="dark:bg:black dark:border-white/50 dark:text-white">
                           <SelectValue placeholder="Select test type" />
                         </SelectTrigger>
                         <SelectContent className="dark:bg-black dark:border-white/50">
@@ -297,7 +263,7 @@ export default function Practice() {
 
                     {/* Subject */}
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 dark:text-white mb-2">
+                      <label className="block text-sm font-medium text-gray-700 dark:text:white mb-2">
                         Subject
                       </label>
                       <Select value={subject} onValueChange={setSubject} disabled={!testType}>
@@ -327,7 +293,6 @@ export default function Practice() {
                           <SelectItem value="5">5 Questions</SelectItem>
                           <SelectItem value="10">10 Questions</SelectItem>
                           <SelectItem value="15">15 Questions</SelectItem>
-                          {/* 20 removed intentionally */}
                         </SelectContent>
                       </Select>
                     </div>
@@ -540,7 +505,7 @@ export default function Practice() {
                             ))}
                           </div>
 
-                          <div className="bg-blue-50 dark:bg-white/10 p-4 rounded-lg border dark:border-white/30">
+                          <div className="bg-blue-50 dark:bg:white/10 p-4 rounded-lg border dark:border-white/30">
                             <h4 className="font-semibold text-blue-900 dark:text-white mb-2">
                               Explanation:
                             </h4>
