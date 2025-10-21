@@ -177,7 +177,7 @@ export default function Layout({ children }) {
 
           <div className="border-t border-gray-200 dark:border-gray-800 mt-8 pt-8 text-center">
             <p className="text-gray-600 dark:text-white/70">
-              © 2024 PrepMind. Empowering students with free, AI-powered test preparation.
+              © 2025 PrepMind. Empowering students with free, AI-powered test preparation.
             </p>
           </div>
         </div>
