@@ -1,4 +1,4 @@
-// server/routes/questions.js
+// server/routes/question.js
 import { getQaModel } from "../services/gemini.js";
 
 /** ---- System prompt (short & strict) ---- */
