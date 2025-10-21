@@ -150,7 +150,7 @@ async function askOnce({ testType, subject, topic, count }) {
   return normalizePacket(safeJsonExtract(raw));
 }
 
-/** Batch fallback: generate in chunks of 5 and merge */
+/** Batch : generate in chunks of 5 and merge */
 async function askBatched({ testType, subject, topic, total }) {
   const CHUNK = 5;
   const packets = [];
@@ -167,7 +167,7 @@ async function askBatched({ testType, subject, topic, total }) {
 export async function generateQuestions({ testType, subject, topic, numQuestions }) {
   const n = Math.max(1, Math.min(15, Number(numQuestions) || 5));
 
-  // 1) Try single-shot JSON-mode
+  // 1) Try 
   try {
     const one = await askOnce({ testType, subject, topic, count: n });
     if (Array.isArray(one.questions) && one.questions.length === n) {
