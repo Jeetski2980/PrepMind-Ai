@@ -6,27 +6,19 @@ import path from "path";
 import { fileURLToPath } from "url";
 
 import { generateChatResponse } from "./routes/chat.js";
-// ✅ singular file name here:
+// ✅ must match filename (singular if file is question.js)
 import { generateQuestions } from "./routes/question.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const app = express();
-
-/** Render provides PORT — fall back only for local dev */
 const PORT = Number(process.env.PORT) || 10000;
 
-/** Middleware */
 app.use(express.json({ limit: "1mb" }));
-app.use(
-  cors({
-    origin: true,
-    methods: ["GET", "POST", "HEAD"],
-  })
-);
+app.use(cors({ origin: true, methods: ["GET", "POST", "HEAD"] }));
 
-/** API routes */
+// Chat endpoint
 app.post("/api/chat", async (req, res) => {
   try {
     const { message = "" } = req.body || {};
@@ -38,6 +30,7 @@ app.post("/api/chat", async (req, res) => {
   }
 });
 
+// Question generation endpoint
 app.post("/api/generate-questions", async (req, res) => {
   try {
     const payload = req.body || {};
@@ -49,7 +42,7 @@ app.post("/api/generate-questions", async (req, res) => {
   }
 });
 
-/** Static + SPA fallback */
+// Serve frontend
 const distDir = path.resolve(__dirname, "../dist");
 app.use(express.static(distDir, { extensions: ["html"] }));
 const sendIndex = (_req, res) => res.sendFile(path.join(distDir, "index.html"));
@@ -59,10 +52,8 @@ app.head("/", (_req, res) => res.sendStatus(200));
 app.get(/^\/(?!api).*/, sendIndex);
 app.head(/^\/(?!api).*/, (_req, res) => res.sendStatus(200));
 
-/** Start */
 app.listen(PORT, () => {
   console.log(`✅ Server listening on :${PORT}`);
   console.log("Has GEMINI_CHAT_API_KEY?", Boolean(process.env.GEMINI_CHAT_API_KEY));
   console.log("Has GEMINI_QA_API_KEY?", Boolean(process.env.GEMINI_QA_API_KEY));
-  console.log("Serving static from:", distDir);
 });
