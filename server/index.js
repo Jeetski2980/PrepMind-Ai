@@ -25,7 +25,7 @@ app.use(
   })
 );
 
-// ========= API ROUTES =========
+//  API ROUTES 
 
 // Chat (Tutor)
 app.post("/api/chat", async (req, res) => {
@@ -51,7 +51,7 @@ app.post("/api/generate-questions", async (req, res) => {
   }
 });
 
-// ========= STATIC + SPA FALLBACK =========
+//STATIC + SPA FALLBACK 
 const distDir = path.resolve(__dirname, "../dist");
 app.use(express.static(distDir, { extensions: ["html"] }));
 
@@ -62,7 +62,7 @@ app.head("/", (_req, res) => res.sendStatus(200));
 app.get(/^\/(?!api).*/, sendIndex);
 app.head(/^\/(?!api).*/, (_req, res) => res.sendStatus(200));
 
-// ========= START =========
+// START 
 app.listen(PORT, () => {
   console.log(`✅ Server listening on :${PORT}`);
   console.log("Has GEMINI_CHAT_API_KEY?", Boolean(process.env.GEMINI_CHAT_API_KEY));
