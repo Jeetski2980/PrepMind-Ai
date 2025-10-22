@@ -1,170 +1,200 @@
-Prep Mind AI
+# Prep Mind AI
 
-Live site: https://prepmind.org
+**Live site:** [https://prepmind.org](https://prepmind.org)  
+**Video demonstration:** *(Replace with your public HTTPS video URL)*  
+**License:** [MIT](./LICENSE)
 
-Video demonstration: https://<your-video-link> ← replace with the public HTTPS URL used in your application
-Repository license: MIT (or update to your license)
+---
 
-Prep Mind AI is a free, browser-based test-prep tool for SAT, ACT, and AP practice. The app is designed for universal access. It intentionally avoids user accounts and databases to minimize cost and data collection. Questions and stepwise explanations are produced on demand via LLM APIs, with KaTeX rendering for readable math.
+## Overview
 
-Why it matters
+Prep Mind AI is a free, browser-based test-prep application for SAT, ACT, and AP practice.  
+The project is designed for performance, simplicity, and data minimization. It runs entirely in the browser, using an optional backend proxy to securely access LLM APIs.  
+No accounts, databases, or analytics are used.
 
-Paid prep tools can exclude students. Prep Mind AI focuses on equity: no sign-ups, no student data stored server-side, fast startup on school Chromebooks, and zero recurring platform fees so the app can remain free.
+---
 
-Key capabilities
+## Core Technologies
 
-SAT Math and Reading & Writing practice with instant generation
+- **Frontend:** React + Vite + Tailwind CSS  
+- **Math Rendering:** KaTeX  
+- **Backend (optional):** Node.js + Express (API proxy)  
+- **Model Provider:** Google AI Studio (Gemini family)  
+- **Build System:** Vite for client, Node scripts for server
 
-Step-by-step solution explanations with KaTeX typesetting
+---
 
-“AI Tutor” chat mode for follow-up questions
+## Architecture
 
-Works without accounts and without a database
+Client-side requests are handled by the frontend UI.  
+If an API proxy is enabled, calls flow through the Express backend before reaching the model provider.
 
-Mobile-responsive UI and low bandwidth footprint
+```
+Browser (React UI)
+  ↓
+/api/*  (Express Proxy)
+  ↓
+Gemini Model Provider (Google AI Studio)
+  ↓
+JSON → Rendered Question/Explanation
+```
 
-Architecture at a glance
+---
 
-Frontend: React + Vite + Tailwind CSS. KaTeX for math layout.
+## Project Structure
 
-Backend (optional but recommended): Node.js + Express proxy to call model providers securely and handle CORS. No persistence layer.
-
-Models: Configurable provider boundary supporting Google AI Studio (Gemini). The same interface can support Together AI or others.
-
-Hosting: Render. Static site for the frontend. Separate Render web service for the API proxy, or a single service that serves both.
-
-Request flow
-
-Browser UI → /api/* (Express proxy) → Provider SDK/HTTPS (Google AI Studio) → normalized JSON → UI renders question, choices, and explanation.
-
-Project structure (compact)
+```
 prepmind-ai/
-├─ client/                    # React application (Vite)
-│  ├─ index.html
-│  ├─ vite.config.*          # Aliases, dev server, build
-│  ├─ package.json
-│  └─ src/
-│     ├─ main.*              # App bootstrap
-│     ├─ App.*               # Routes and providers
-│     ├─ routes/
-│     │  ├─ Home.*           # Landing page
-│     │  ├─ Practice.*       # Question flow
-│     │  └─ Tutor.*          # AI Tutor chat
-│     ├─ components/
-│     │  ├─ QuestionCard.*   # Stem, choices, selection
-│     │  ├─ Explanation.*    # Step-by-step + KaTeX
-│     │  └─ Header|Footer.*
-│     ├─ lib/
-│     │  ├─ api.*            # REST client to /api
-│     │  ├─ prompts.*        # Prompt templates
-│     │  └─ katex.*          # KaTeX utilities
-│     └─ styles/tailwind.css
+├── client/                        # React (Vite) frontend
+│   ├── index.html
+│   ├── vite.config.js             # Path aliases, dev server, build config
+│   ├── package.json
+│   └── src/
+│       ├── main.jsx               # React entry point, root render
+│       ├── App.jsx                # Top-level router + providers
+│       │
+│       ├── routes/                # Application pages
+│       │   ├── Home.jsx           # Landing page UI
+│       │   ├── Practice.jsx       # Question generation + flow
+│       │   └── Tutor.jsx          # Chat tutor mode
+│       │
+│       ├── components/            # Reusable UI components
+│       │   ├── QuestionCard.jsx   # Displays question + answer choices
+│       │   ├── Explanation.jsx    # Step-by-step KaTeX explanations
+│       │   ├── ApiKeyNoticeGoogle.jsx
+│       │   ├── Layout.jsx         # Shared page layout
+│       │   ├── Header.jsx
+│       │   └── Footer.jsx
+│       │
+│       ├── lib/                   # Utility functions and API clients
+│       │   ├── api.js             # REST client → /api routes
+│       │   ├── prompts.js         # Prompt templates for model queries
+│       │   └── katex.js           # KaTeX configuration helpers
+│       │
+│       └── styles/
+│           └── tailwind.css       # Global Tailwind configuration
 │
-├─ server/                   # Optional API proxy (Render Web Service)
-│  ├─ src/
-│  │  ├─ index.*             # Express app
-│  │  ├─ routes/
-│  │  │  ├─ health.*         # GET /health
-│  │  │  └─ ai.*             # POST /api/generate|explain|tutor
-│  │  └─ providers/
-│  │     └─ googleAi.*       # Google AI Studio calls
-│  ├─ package.json
-│  └─ tsconfig.json
+├── server/                        # Optional Express API proxy
+│   ├── src/
+│   │   ├── index.js               # Express app entry point
+│   │   ├── routes/
+│   │   │   ├── health.js          # GET /health (status check)
+│   │   │   └── ai.js              # POST /api/generate|explain|tutor
+│   │   └── providers/
+│   │       └── googleAi.js        # Handles Google AI Studio API calls
+│   │
+│   ├── package.json
+│   ├── tsconfig.json
+│   └── .env.example               # Server environment variables
 │
-├─ .env.example              # Example environment variables
-├─ README.md
-└─ LICENSE
+├── .gitignore
+├── .env.example                   # Root example environment config
+├── README.md
+└── LICENSE
+```
 
-Environment configuration
+---
 
-client/.env (when calling a same-origin proxy):
+## Environment Configuration
 
+### client/.env
+Used when the frontend calls the backend proxy on the same origin.
+
+```
 VITE_API_BASE=/api
+```
 
+### server/.env
+Used to define server behavior and API keys.
 
-server/.env
-
+```
 PORT=8080
 ALLOWED_ORIGINS=https://prepmind.org,http://localhost:5173
+GOOGLE_AI_STUDIO_API_KEY=YOUR_KEY
+GOOGLE_AI_STUDIO_MODEL=gemini-2.5-flash
+```
 
-GOOGLE_AI_STUDIO_API_KEY=...
-GOOGLE_AI_STUDIO_MODEL=gemini-1.5-flash   # or gemini-pro
+**Notes:**
+- Do not expose API keys in client-side builds.  
+- All model requests should pass through the Express proxy in production.
 
+---
 
-Security note: API keys must not be exposed in client code. In production, route model traffic through the Express proxy.
+## Build and Development
 
-Deployment notes (Render)
+### Local Development
 
-Split services
+**Requirements:** Node.js 20 or later.
 
-Static Site: client/
-
-Build: npm ci && npm run build
-
-Publish directory: dist
-
-Web Service: server/
-
-Build: npm ci && npm run build
-
-Start: npm start
-
-Set ALLOWED_ORIGINS on the server to include the static site and https://prepmind.org.
-
-Single service
-
-Build the client during the server build and serve client/dist via express.static. Simplifies CORS and domain configuration.
-
-Custom domain
-
-Point prepmind.org to Render and attach it to the service(s). Enable TLS in Render.
-
-Local development (VS Code)
-
-Prerequisites: Node 20+.
-Terminal A:
-
+**Frontend:**
+```bash
 cd client
 npm install
-cp ../.env.example .env  # if needed
-npm run dev   # http://localhost:5173
+npm run dev
+# Runs on http://localhost:5173
+```
 
-
-Terminal B:
-
+**Backend:**
+```bash
 cd server
 npm install
-cp ../.env.example .env
-npm run dev   # http://localhost:8080
+npm run dev
+# Runs on http://localhost:8080
+```
 
+Both services can run simultaneously during development.
 
-Common issues
+---
 
-KaTeX duplicate symbol: import InlineMath and BlockMath once and re-export to avoid multiple declarations.
+### Production Build
 
-CORS: ensure ALLOWED_ORIGINS matches your dev host and production domain.
+**Frontend build:**
+```bash
+cd client
+npm ci
+npm run build
+# Output: client/dist
+```
 
-Port collisions: change Vite port or stop previous dev servers.
+**Backend build:**
+```bash
+cd server
+npm ci
+npm run build
+npm start
+```
 
-Privacy and accessibility
+You can serve the built frontend statically via Express by adding:
 
-No server-side storage. No accounts, no profiles, no analytics database.
+```js
+app.use(express.static("client/dist"));
+```
 
-Client state is ephemeral and may use localStorage for session continuity only.
+This allows a single deployment for both frontend and backend.
 
-Interface is keyboard-navigable. Color choices maintain sufficient contrast. Math is rendered as real text through KaTeX for screen readers that support MathML fallbacks.
+---
 
-Roadmap
+## Common Issues
 
-AP Chemistry and Pre-Calculus modules
+| Issue | Cause | Fix |
+|-------|--------|-----|
+| Duplicate KaTeX imports | Multiple re-imports of `InlineMath`/`BlockMath` | Centralize import/export once |
+| CORS errors | Mismatch between `ALLOWED_ORIGINS` and request origin | Update `server/.env` accordingly |
+| Port conflicts | Multiple dev servers running | Kill existing processes or change ports |
 
-Offline practice mode
+---
 
-Voice tutoring and multilingual UI
+## Privacy and Accessibility
 
-Contact
+- No user accounts, databases, or analytics tracking  
+- Client state stored locally only (session/localStorage)  
+- Keyboard-navigable interface  
+- Math rendered as text with KaTeX for screen reader compatibility
 
-Primary author: Jeet Anil
-Project site: https://prepmind.org
+---
 
-Issues and feedback: open a GitHub issue in this repository
+## Contact
+
+**Author:** Jeet Anil  
+**Website:** [https://prepmind.org](https://prepmind.org)  
+**Issues:** [GitHub Repository](https://github.com/Jeetski2980/PrepMind-Ai/issues)
