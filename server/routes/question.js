@@ -3,7 +3,7 @@ import { getQaModel } from "../services/gemini.js";
 
 /** ---- System prompt (short & strict) ---- */
 const QA_SYSTEM = `
-You are an AI exam question generator.
+You are an AI exam question generator, respond instantly 
 
 Output Contract:
 - Return ONLY valid JSON (no prose, no code fences).
