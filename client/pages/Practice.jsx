@@ -505,14 +505,11 @@ export default function Practice() {
                             ))}
                           </div>
 
-                          <div className="bg-blue-50 dark:bg:white/10 p-4 rounded-lg border dark:border-white/30">
-                            <h4 className="font-semibold text-blue-900 dark:text-white mb-2">
-                              Explanation:
-                            </h4>
-                            <div className="text-blue-800 dark:text-white/80">
-                              {renderTextWithMath(q.explanation)}
-                            </div>
-                          </div>
+                         <div className="explanation-box">
+                           <h4 className="font-semibold mb-2">Explanation:</h4>
+                            <div>{renderTextWithMath(q.explanation)}</div>
+                         </div>
+
                         </CardContent>
                       </Card>
                     );

@@ -965,3 +965,26 @@
   background-color: #1a1a1a;
   color: white;
 }
+@layer components {
+  /* Practice page explanation box */
+  .explanation-box {
+    background-color: #EFF6FF;       /* light mode */
+    border: 1px solid #D1D5DB;
+    border-radius: 0.5rem;
+    padding: 1rem;
+    color: #1F2937;                  /* text-gray-800 */
+  }
+  .explanation-box h4 { color: #1E3A8A; } /* text-blue-900 */
+
+  /* Dark mode version */
+  .dark .explanation-box {
+    background-color: #0D6EFD;       /* your blue */
+    border-color: #FFFFFF;           /* white outline */
+    color: #FFFFFF;                  /* white text */
+  }
+  .dark .explanation-box h4,
+  .dark .explanation-box .katex,
+  .dark .explanation-box .katex-display {
+    color: #FFFFFF;
+  }
+}
