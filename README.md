@@ -44,52 +44,61 @@ JSON → Rendered Question/Explanation
 ## Project Structure
 
 ```
-prepmind-ai/
-├── client/                        # React (Vite) frontend
-│   ├── index.html
-│   ├── vite.config.js             # Path aliases, dev server, build config
-│   ├── package.json
-│   └── src/
-│       ├── main.jsx               # React entry point, root render
-│       ├── App.jsx                # Top-level router + providers
-│       │
-│       ├── routes/                # Application pages
-│       │   ├── Home.jsx           # Landing page UI
-│       │   ├── Practice.jsx       # Question generation + flow
-│       │   └── Tutor.jsx          # Chat tutor mode
-│       │
-│       ├── components/            # Reusable UI components
-│       │   ├── QuestionCard.jsx   # Displays question + answer choices
-│       │   ├── Explanation.jsx    # Step-by-step KaTeX explanations
-│       │   ├── ApiKeyNoticeGoogle.jsx
-│       │   ├── Layout.jsx         # Shared page layout
-│       │   ├── Header.jsx
-│       │   └── Footer.jsx
-│       │
-│       ├── lib/                   # Utility functions and API clients
-│       │   ├── api.js             # REST client → /api routes
-│       │   ├── prompts.js         # Prompt templates for model queries
-│       │   └── katex.js           # KaTeX configuration helpers
-│       │
-│       └── styles/
-│           └── tailwind.css       # Global Tailwind configuration
-│
-├── server/                        # Optional Express API proxy
-│   ├── src/
-│   │   ├── index.js               # Express app entry point
-│   │   ├── routes/
-│   │   │   ├── health.js          # GET /health (status check)
-│   │   │   └── ai.js              # POST /api/generate|explain|tutor
-│   │   └── providers/
-│   │       └── googleAi.js        # Handles Google AI Studio API calls
+PREPMIND-AI-6/
+├── client/                                # Frontend (React + Vite)
+│   ├── components/                        # Shared React UI components
+│   │   ├── ui/                            # Shadcn-style reusable UI
+│   │   │   ├── badge.jsx                  # Small label/tag component
+│   │   │   ├── button.jsx                 # Reusable button element
+│   │   │   ├── card.jsx                   # Card container for content blocks
+│   │   │   ├── select.jsx                 # Dropdown/select component
+│   │   │   └── textarea.jsx               # Text input area
+│   │   │
+│   │   ├── ApiKeyNoticeGoogle.jsx         # Warns if Google API key missing/invalid
+│   │   └── Layout.jsx                     # Common page wrapper (header/footer/layout)
 │   │
-│   ├── package.json
-│   ├── tsconfig.json
-│   └── .env.example               # Server environment variables
+│   ├── lib/
+│   │   └── utils.js                       # Helper/utility functions for frontend
+│   │
+│   ├── pages/                             # Page-level React routes
+│   │   ├── About.jsx                      # About page
+│   │   ├── Index.jsx                      # Home/landing page
+│   │   ├── NotFound.jsx                   # 404 “page not found”
+│   │   ├── Practice.jsx                   # Practice question generator interface
+│   │   └── Tutor.jsx                      # AI Tutor chat interface
+│   │
+│   ├── App.jsx                            # Root React component + router setup
+│   ├── global.css                         # Global CSS / Tailwind imports
+│   │
+│   └── public/                            # Static files copied to build
+│       ├── apple-touch-icon.svg           # iOS app icon
+│       ├── favicon.svg                    # Browser tab icon
+│       ├── site.webmanifest               # PWA manifest (name, icons)
+│       └── sitemap.xml                    # Search engine sitemap
 │
-├── .gitignore
-├── .env.example                   # Root example environment config
-├── README.md
+├── server/                                # Express backend
+│   ├── routes/                            # API route handlers
+│   │   ├── chat.js                        # /api/chat → Tutor AI chat endpoint
+│   │   └── question.js                    # /api/question → Question generation
+│   │
+│   ├── services/                          # External integrations
+│   │   └── gemini.js                      # Handles Gemini API calls
+│   │
+│   ├── index.js                           # Express app entry point
+│   └──  node-build.js                     # Build/deploy helper script
+│   
+├── env.example                            # Example backend environment variables
+├── api.ts                                 # TypeScript helper/types for API
+├── index.html                             # Base HTML template (Vite mount point)
+├── LICENSE                                # Open-source license (MIT, etc.)
+├── package.json                           # Dependencies + npm scripts
+├── package-lock.json                      # Exact dependency versions
+├── postcss.config.js                      # Tailwind/PostCSS configuration
+├── README.md                              # Project documentation
+├── tailwind.config.js                     # Tailwind theme + plugin setup
+├── vite.config.js                         # Main Vite config (frontend build)
+└── vite.config.server.js                  # Vite config for server build/SSR
+
 └── LICENSE
 ```
 
