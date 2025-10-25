@@ -13,7 +13,7 @@ export default function Tutor() {
     {
       id: 1,
       text:
-        "Hi! I'm here to help you understand SAT, ACT, and AP exam concepts. Try typing or using your voice to ask me anything about test prep!",
+        "Hi, I'm here to help you understand SAT, ACT, and AP exam concepts. Try typing or using your voice to ask me anything about test prep!",
       isUser: false,
       timestamp: new Date(),
     },
