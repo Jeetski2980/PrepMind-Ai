@@ -29,7 +29,7 @@ Rules:
 - NO markdown, NO additional text outside the JSON.
 `;
 
-/** ---- JSON schema compatible with Gemini (no additionalProperties/min/max/etc.) ---- */
+/**  JSON schema compatible with Gemini (no additionalProperties/min/max/etc.)  */
 const schema = {
   type: "object",
   properties: {
@@ -177,7 +177,7 @@ export async function generateQuestions({ testType, subject, topic, numQuestions
     console.warn("[generator] single-shot failed, falling back to batched:", e?.message || e);
   }
 
-  // 2) Fallback: batched generation (reliable for 10–20)
+  // 2) Fallback: batched generation (reliable for 10–15 questions)
   const merged = await askBatched({ testType, subject, topic, total: n });
   return merged;
 }

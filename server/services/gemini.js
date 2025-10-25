@@ -19,6 +19,6 @@ export function getChatModel(overrides = {}) {
 }
 
 export function getQaModel(overrides = {}) {
-  const genAI = new GoogleGenerativeAI(QA_KEY); // 👈 Must be QA key
+  const genAI = new GoogleGenerativeAI(QA_KEY); //  Must be QA key
   return genAI.getGenerativeModel({ model: QA_MODEL, ...overrides });
 }
