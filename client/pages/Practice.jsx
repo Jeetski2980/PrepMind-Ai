@@ -45,7 +45,7 @@ const TOPIC_OPTIONS = {
   "Computer Science A": ["Object-Oriented Programming","Data Structures","Algorithms","Program Design"],
 };
 
-/* ---------- Math rendering (EXACT copy from Tutor.jsx) ---------- */
+/* ---------- Math rendering ---------- */
 const renderTextWithMath = (text) => {
   if (text == null) return null;
   let s = String(text);
