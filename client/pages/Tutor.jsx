@@ -39,7 +39,9 @@ export default function Tutor() {
     const isNearBottom = el.scrollHeight - el.scrollTop - el.clientHeight < 100;
     setShouldAutoScroll(isNearBottom);
   };
-  useEffect(() => { if (shouldAutoScroll) scrollToBottom(); }, [messages, shouldAutoScroll]);
+  useEffect(() => {
+    if (shouldAutoScroll) scrollToBottom();
+  }, [messages, shouldAutoScroll]);
 
   useEffect(() => {
     if ("webkitSpeechRecognition" in window || "SpeechRecognition" in window) {
@@ -57,23 +59,39 @@ export default function Tutor() {
       recognitionRef.current.onerror = () => setIsListening(false);
     }
     synthRef.current = window.speechSynthesis;
-    return () => { recognitionRef.current?.stop(); synthRef.current?.cancel(); };
+    return () => {
+      recognitionRef.current?.stop();
+      synthRef.current?.cancel();
+    };
   }, []);
 
-  const startListening = () => { if (recognitionRef.current && !isListening) { setIsListening(true); recognitionRef.current.start(); } };
-  const stopListening = () => { recognitionRef.current?.stop(); setIsListening(false); };
+  const startListening = () => {
+    if (recognitionRef.current && !isListening) {
+      setIsListening(true);
+      recognitionRef.current.start();
+    }
+  };
+  const stopListening = () => {
+    recognitionRef.current?.stop();
+    setIsListening(false);
+  };
   const speakText = (text) => {
     const safe = typeof text === "string" ? text : String(text ?? "");
     if (synthRef.current && !isSpeaking && safe) {
       const u = new SpeechSynthesisUtterance(safe);
-      u.rate = 1.3; u.pitch = 1; u.volume = 0.8;
+      u.rate = 1.3;
+      u.pitch = 1;
+      u.volume = 0.8;
       u.onstart = () => setIsSpeaking(true);
       u.onend = () => setIsSpeaking(false);
       u.onerror = () => setIsSpeaking(false);
       synthRef.current.speak(u);
     }
   };
-  const stopSpeaking = () => { synthRef.current?.cancel(); setIsSpeaking(false); };
+  const stopSpeaking = () => {
+    synthRef.current?.cancel();
+    setIsSpeaking(false);
+  };
 
   async function sendChat(userText) {
     try {
@@ -99,7 +117,12 @@ export default function Tutor() {
     const trimmed = inputText.trim();
     if (!trimmed || isLoading) return;
 
-    const userMessage = { id: Date.now(), text: trimmed, isUser: true, timestamp: new Date() };
+    const userMessage = {
+      id: Date.now(),
+      text: trimmed,
+      isUser: true,
+      timestamp: new Date(),
+    };
     setMessages((prev) => [...prev, userMessage]);
     setInputText("");
     setIsLoading(true);
@@ -108,7 +131,10 @@ export default function Tutor() {
       const replyText = await sendChat(userMessage.text);
       const aiMessage = {
         id: Date.now() + 1,
-        text: typeof replyText === "string" ? replyText : JSON.stringify(replyText ?? ""),
+        text:
+          typeof replyText === "string"
+            ? replyText
+            : JSON.stringify(replyText ?? ""),
         isUser: false,
         timestamp: new Date(),
       };
@@ -116,62 +142,74 @@ export default function Tutor() {
     } catch {
       setMessages((prev) => [
         ...prev,
-        { id: Date.now() + 1, text: "I'm sorry, I'm having trouble connecting right now. Please try again later.", isUser: false, timestamp: new Date() },
+        {
+          id: Date.now() + 1,
+          text: "I'm sorry, I'm having trouble connecting right now. Please try again later.",
+          isUser: false,
+          timestamp: new Date(),
+        },
       ]);
     }
     setIsLoading(false);
   };
 
-  const handleKeyDown = (e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); sendMessage(); } };
-
-  // ---------- SAME robust renderer as Practice.jsx ----------
- /* ---------- Math rendering (robust + safe) ---------- */
-const renderTextWithMath = (text) => {
-  if (text == null) return null;
-  let s = String(text);
-
-  // Normalize \( ... \) and \[ ... \]
-  s = s
-    .replace(/\\\(([\s\S]+?)\\\)/g, (_m, p1) => `$${p1}$`)
-    .replace(/\\\[([\s\S]+?)\\\]/g, (_m, p1) => `$$${p1}$$`);
-
-  if (!s.includes("$")) {
-    if (/^\s*\\[A-Za-z]/.test(s.trim())) {
-      s = `$${s}$`;
-    } else {
-      const CHUNK =
-        /(\\frac\{[^{}]+\}\{[^{}]+\}|\\sqrt\{[^{}]+\}|\\hat\{[^{}]+\}|\\bar\{[^{}]+\}|\\vec\{[^{}]+\}|\\int[^ \n]*|\\sum[^ \n]*|\\lim[^ \n]*|\\log(?:_[^{\s]+|\([^)]*\))?|\\sin|\\cos|\\tan|\\pi|\\theta|\\alpha|\\beta|\\gamma|\\delta|\\lambda|\\mu|\\sigma|\\leq|\\geq|\\neq|\\ne)/g;
-      s = s.replace(CHUNK, (m) => `$${m}$`);
+  const handleKeyDown = (e) => {
+    if (e.key === "Enter" && !e.shiftKey) {
+      e.preventDefault();
+      sendMessage();
     }
-  }
+  };
 
-  if (s.split("$").length % 2 === 0) {
-    s = s.replace(/\$/g, "");
-  }
+  /* ---------- Math rendering (robust + safe) ---------- */
+  const renderTextWithMath = (text) => {
+    if (text == null) return null;
+    let s = String(text);
+    s = s
+      .replace(/\\\(([\s\S]+?)\\\)/g, (_m, p1) => `$${p1}$`)
+      .replace(/\\\[([\s\S]+?)\\\]/g, (_m, p1) => `$$${p1}$$`);
 
-  const parts = s.split(/(\$\$[\s\S]+?\$\$|\$[\s\S]+?\$)/g);
-
-  return parts.map((part, i) => {
-    if (part.startsWith("$$") && part.endsWith("$$")) {
-      const math = part.slice(2, -2);
-      try { return <BlockMath key={i} math={math} />; }
-      catch { return <span key={i}>{part}</span>; }
+    if (!s.includes("$")) {
+      if (/^\s*\\[A-Za-z]/.test(s.trim())) {
+        s = `$${s}$`;
+      } else {
+        const CHUNK =
+          /(\\frac\{[^{}]+\}\{[^{}]+\}|\\sqrt\{[^{}]+\}|\\hat\{[^{}]+\}|\\bar\{[^{}]+\}|\\vec\{[^{}]+\}|\\int[^ \n]*|\\sum[^ \n]*|\\lim[^ \n]*|\\log(?:_[^{\s]+|\([^)]*\))?|\\sin|\\cos|\\tan|\\pi|\\theta|\\alpha|\\beta|\\gamma|\\delta|\\lambda|\\mu|\\sigma|\\leq|\\geq|\\neq|\\ne)/g;
+        s = s.replace(CHUNK, (m) => `$${m}$`);
+      }
     }
-    if (part.startsWith("$") && part.endsWith("$")) {
-      const math = part.slice(1, -1);
-      try { return <InlineMath key={i} math={math} />; }
-      catch { return <span key={i}>{part}</span>; }
+
+    if (s.split("$").length % 2 === 0) {
+      s = s.replace(/\$/g, "");
     }
-    return (
-      <span
-        key={i}
-        dangerouslySetInnerHTML={{
-          __html: part.replace(/\*\*(.*?)\*\*/g, "<strong>$1</strong>")
-        }}
-      />
-    );
-  });
-};
+
+    const parts = s.split(/(\$\$[\s\S]+?\$\$|\$[\s\S]+?\$)/g);
+    return parts.map((part, i) => {
+      if (part.startsWith("$$") && part.endsWith("$$")) {
+        const math = part.slice(2, -2);
+        try {
+          return <BlockMath key={i} math={math} />;
+        } catch {
+          return <span key={i}>{part}</span>;
+        }
+      }
+      if (part.startsWith("$") && part.endsWith("$")) {
+        const math = part.slice(1, -1);
+        try {
+          return <InlineMath key={i} math={math} />;
+        } catch {
+          return <span key={i}>{part}</span>;
+        }
+      }
+      return (
+        <span
+          key={i}
+          dangerouslySetInnerHTML={{
+            __html: part.replace(/\*\*(.*?)\*\*/g, "<strong>$1</strong>"),
+          }}
+        />
+      );
+    });
+  };
 
   const renderMessageContent = (text) => {
     const safeText = typeof text === "string" ? text : String(text ?? "");
@@ -180,7 +218,10 @@ const renderTextWithMath = (text) => {
       if (part.startsWith("<highlight>") && part.endsWith("</highlight>")) {
         const content = part.slice(11, -12);
         return (
-          <span key={i} className="bg-yellow-200 dark:bg-yellow-600/30 px-1 py-0.5 rounded">
+          <span
+            key={i}
+            className="bg-yellow-200 dark:bg-yellow-600/30 px-1 py-0.5 rounded"
+          >
             {renderTextWithMath(content)}
           </span>
         );
@@ -198,7 +239,9 @@ const renderTextWithMath = (text) => {
             <div className="w-16 h-16 bg-emerald-100 dark:bg-emerald-400/10 rounded-full flex items-center justify-center mx-auto mb-4">
               <MessageSquare className="w-8 h-8 text-emerald-600 dark:text-emerald-400" />
             </div>
-            <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">Your AI Tutor</h1>
+            <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
+              Your AI Tutor
+            </h1>
             <p className="text-gray-600 dark:text-white/70">
               Ask me anything about test prep. Try typing or using your voice.
             </p>
@@ -215,14 +258,31 @@ const renderTextWithMath = (text) => {
               onScroll={checkScrollPosition}
             >
               {messages.map((message) => (
-                <div key={message.id} className={`flex ${message.isUser ? "justify-end" : "justify-start"}`}>
-                  <div className={`max-w-[80%] flex items-start space-x-3 ${message.isUser ? "flex-row-reverse space-x-reverse" : ""}`}>
+                <div
+                  key={message.id}
+                  className={`flex ${
+                    message.isUser ? "justify-end" : "justify-start"
+                  }`}
+                >
+                  <div
+                    className={`max-w-[80%] flex items-start space-x-3 ${
+                      message.isUser
+                        ? "flex-row-reverse space-x-reverse"
+                        : ""
+                    }`}
+                  >
                     <div
                       className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 ${
-                        message.isUser ? "bg-white dark:bg-white text-emerald-600 dark:text-black" : "bg-emerald-400 dark:bg-emerald-400 text-white dark:text-black"
+                        message.isUser
+                          ? "bg-white dark:bg-white text-emerald-600 dark:text-black"
+                          : "bg-emerald-400 dark:bg-emerald-400 text-white dark:text-black"
                       }`}
                     >
-                      {message.isUser ? <User className="w-4 h-4" /> : <Bot className="w-4 h-4" />}
+                      {message.isUser ? (
+                        <User className="w-4 h-4" />
+                      ) : (
+                        <Bot className="w-4 h-4" />
+                      )}
                     </div>
 
                     <div
@@ -232,15 +292,25 @@ const renderTextWithMath = (text) => {
                           : "bg-white dark:bg-black border dark:border-white/30 text-gray-900 dark:text-white rounded-bl-md"
                       }`}
                     >
-                      <div className="whitespace-pre-wrap">{renderMessageContent(message.text)}</div>
+                      <div className="whitespace-pre-wrap">
+                        {renderMessageContent(message.text)}
+                      </div>
                       {!message.isUser && (
                         <Button
                           variant="ghost"
                           size="sm"
-                          onClick={() => (isSpeaking ? stopSpeaking() : speakText(message.text))}
+                          onClick={() =>
+                            isSpeaking
+                              ? stopSpeaking()
+                              : speakText(message.text)
+                          }
                           className="mt-2 p-1 h-6 w-6 hover:bg-gray-100 dark:hover:bg-white/10"
                         >
-                          {isSpeaking ? <VolumeX className="w-3 h-3" /> : <Volume2 className="w-3 h-3" />}
+                          {isSpeaking ? (
+                            <VolumeX className="w-3 h-3" />
+                          ) : (
+                            <Volume2 className="w-3 h-3" />
+                          )}
                         </Button>
                       )}
                     </div>
@@ -257,8 +327,14 @@ const renderTextWithMath = (text) => {
                     <div className="bg-white dark:bg-black border dark:border-white/30 p-4 rounded-2xl rounded-bl-md">
                       <div className="flex space-x-1">
                         <div className="w-2 h-2 bg-gray-400 dark:bg-white/50 rounded-full animate-bounce" />
-                        <div className="w-2 h-2 bg-gray-400 dark:bg-white/50 rounded-full animate-bounce" style={{ animationDelay: "0.1s" }} />
-                        <div className="w-2 h-2 bg-gray-400 dark:bg-white/50 rounded-full animate-bounce" style={{ animationDelay: "0.2s" }} />
+                        <div
+                          className="w-2 h-2 bg-gray-400 dark:bg-white/50 rounded-full animate-bounce"
+                          style={{ animationDelay: "0.1s" }}
+                        />
+                        <div
+                          className="w-2 h-2 bg-gray-400 dark:bg-white/50 rounded-full animate-bounce"
+                          style={{ animationDelay: "0.2s" }}
+                        />
                       </div>
                     </div>
                   </div>
@@ -272,12 +348,19 @@ const renderTextWithMath = (text) => {
                 <div className="flex-1 relative">
                   <Textarea
                     value={inputText}
-                    onChange={(e) => setInputText(e.target.value)}
+                    onChange={(e) => {
+                      if (e.target.value.length <= 350)
+                        setInputText(e.target.value);
+                    }}
+                    maxLength={350}
                     onKeyDown={handleKeyDown}
-                    placeholder="Ask me anything..."
+                    placeholder="Ask me anything... (max 350 characters)"
                     className="min-h-[60px] pr-12 resize-none dark:bg-black dark:border-white/50 dark:text-white"
                     disabled={isLoading}
                   />
+                  <div className="absolute bottom-1 right-12 text-xs text-gray-500 dark:text-white/60">
+                    {inputText.length}/350
+                  </div>
                   <Button
                     variant="ghost"
                     size="sm"
@@ -288,7 +371,11 @@ const renderTextWithMath = (text) => {
                         : "text-gray-500 dark:text-white hover:text-emerald-600 dark:hover:text-emerald-400"
                     }`}
                   >
-                    {isListening ? <MicOff className="w-4 h-4" /> : <Mic className="w-4 h-4" />}
+                    {isListening ? (
+                      <MicOff className="w-4 h-4" />
+                    ) : (
+                      <Mic className="w-4 h-4" />
+                    )}
                   </Button>
                 </div>
                 <Button
