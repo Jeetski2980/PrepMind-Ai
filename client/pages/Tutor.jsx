@@ -66,7 +66,7 @@ export default function Tutor() {
     const safe = typeof text === "string" ? text : String(text ?? "");
     if (synthRef.current && !isSpeaking && safe) {
       const u = new SpeechSynthesisUtterance(safe);
-      u.rate = 0.9; u.pitch = 1; u.volume = 0.8;
+      u.rate = 1.3; u.pitch = 1; u.volume = 0.8;
       u.onstart = () => setIsSpeaking(true);
       u.onend = () => setIsSpeaking(false);
       u.onerror = () => setIsSpeaking(false);
