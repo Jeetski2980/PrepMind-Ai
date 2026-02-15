@@ -220,7 +220,6 @@ export default function About() {
               </div>
             </CardContent>
           </Card>
-<img src="https://graph.hcb.hackclub.com/prep-mind" alt="Donor graph for Prep Mind">
 
         </div>
       </div>
