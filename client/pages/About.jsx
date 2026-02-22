@@ -220,7 +220,26 @@ export default function About() {
               </div>
             </CardContent>
           </Card>
+          {/* Donor Graph */}
+          <Card className="bg-card dark:bg-card shadow-card dark:shadow-md border border-border dark:border-border rounded-lg mb-12 transition-shadow duration-300">
+            <CardContent className="p-8 text-center">
+              <h2 className="text-2xl font-bold mb-2 text-foreground dark:text-foreground">
+                Thank you to our donors
+              </h2>
+              <p className="text-muted-foreground dark:text-muted-foreground mb-6">
+                Your support helps keep PrepMind free for students.
+              </p>
 
+              <div className="flex justify-center">
+                <img
+                  src="https://graph.hcb.hackclub.com/prep-mind?icon_size=96&gap=10&max_rows=5"
+                  alt="Donor graph for Prep Mind"
+                  className="rounded-lg border border-border dark:border-border"
+                  loading="lazy"
+                />
+              </div>
+            </CardContent>
+          </Card>
         </div>
       </div>
     </Layout>
