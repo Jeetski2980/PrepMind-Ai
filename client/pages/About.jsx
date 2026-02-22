@@ -220,7 +220,7 @@ export default function About() {
               </div>
             </CardContent>
           </Card>
-          {/* Donor Graph */}
+                    {/* Donor Graph */}
           <Card className="bg-card dark:bg-card shadow-card dark:shadow-md border border-border dark:border-border rounded-lg mb-12 transition-shadow duration-300">
             <CardContent className="p-8 text-center">
               <h2 className="text-2xl font-bold mb-2 text-foreground dark:text-foreground">
@@ -232,9 +232,9 @@ export default function About() {
 
               <div className="flex justify-center">
                 <img
-                  src="https://graph.hcb.hackclub.com/prep-mind?icon_size=96&gap=10&max_rows=5"
+                  src="https://graph.hcb.hackclub.com/prep-mind?icon_size=96&gap=10&max_rows=5&bg=ffffff"
                   alt="Donor graph for Prep Mind"
-                  className="rounded-lg border border-border dark:border-border"
+                  className="rounded-lg border border-border dark:border-border max-w-full h-auto"
                   loading="lazy"
                 />
               </div>
