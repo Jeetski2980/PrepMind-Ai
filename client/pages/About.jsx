@@ -220,6 +220,53 @@ export default function About() {
               </div>
             </CardContent>
           </Card>
+                    {/* Donation Embed */}
+          <Card className="bg-white shadow-md border border-gray-200 rounded-lg mb-12">
+            <CardContent className="p-8 text-center bg-white">
+              <h2 className="text-2xl font-bold mb-2 text-black">
+                Support PrepMind
+              </h2>
+              <p className="text-gray-600 mb-6">
+                Help us keep PrepMind free and accessible for every student.
+              </p>
+
+              <div className="flex justify-center">
+                <iframe
+                  src="https://hcb.hackclub.com/donations/start/prep-mind"
+                  name="donateFrame"
+                  scrolling="yes"
+                  frameBorder="0"
+                  marginHeight="0"
+                  marginWidth="0"
+                  allowFullScreen
+                  className="w-full max-w-[512px] h-[512px] rounded-lg"
+                  style={{ border: "none" }}
+                  title="Donate to PrepMind"
+                />
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Donor Graph */}
+          <Card className="bg-white shadow-md border border-gray-200 rounded-lg mb-12">
+            <CardContent className="p-8 text-center bg-white">
+              <h2 className="text-2xl font-bold mb-2 text-black">
+                Thank you to our donors
+              </h2>
+              <p className="text-gray-600 mb-6">
+                Your support helps keep PrepMind free for students.
+              </p>
+
+              <div className="flex justify-center">
+                <img
+                  src="https://graph.hcb.hackclub.com/prep-mind?icon_size=96&gap=10&max_rows=5&bg=ffffff"
+                  alt="Donor graph for Prep Mind"
+                  className="rounded-lg border border-gray-200 max-w-full h-auto"
+                  loading="lazy"
+                />
+              </div>
+            </CardContent>
+          </Card>
                      {/* Donor Graph */}
           <Card className="bg-white shadow-md border border-gray-200 rounded-lg mb-12">
             <CardContent className="p-8 text-center bg-white">
