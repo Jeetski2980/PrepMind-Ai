@@ -239,7 +239,7 @@ export default function About() {
                   marginHeight="0"
                   marginWidth="0"
                   allowFullScreen
-                  className="w-full max-w-[512px] h-[512px] rounded-lg"
+                  className="w-full max-w-[800px] h-[650px] rounded-lg"
                   style={{ border: "none" }}
                   title="Donate to PrepMind"
                 />
