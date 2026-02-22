@@ -220,7 +220,7 @@ export default function About() {
               </div>
             </CardContent>
           </Card>
-                    {/* Donation Embed */}
+               {/* Donation Button */}
           <Card className="bg-white shadow-md border border-gray-200 rounded-lg mb-12">
             <CardContent className="p-8 text-center bg-white">
               <h2 className="text-2xl font-bold mb-2 text-black">
@@ -230,20 +230,14 @@ export default function About() {
                 Help us keep PrepMind free and accessible for every student.
               </p>
 
-              <div className="flex justify-center">
-                <iframe
-                  src="https://hcb.hackclub.com/donations/start/prep-mind"
-                  name="donateFrame"
-                  scrolling="yes"
-                  frameBorder="0"
-                  marginHeight="0"
-                  marginWidth="0"
-                  allowFullScreen
-                  className="w-full max-w-[800px] h-[650px] rounded-lg"
-                  style={{ border: "none" }}
-                  title="Donate to PrepMind"
-                />
-              </div>
+              <a
+                href="https://hcb.hackclub.com/donations/start/prep-mind"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-block bg-emerald-600 hover:bg-emerald-700 text-white font-semibold px-8 py-3 rounded-lg transition duration-200"
+              >
+                Donate Now
+              </a>
             </CardContent>
           </Card>
                      {/* Donor Graph */}
