@@ -1,8 +1,7 @@
 # Prep Mind AI
 
 Live site: [https://prepmind.org](https://prepmind.org)  
-Video demonstration:  --------------------------------
-
+Video demonstration:  --------------------------------  
 License: [MIT](./LICENSE)
 
 ## Overview
@@ -24,14 +23,15 @@ Client-side requests are handled by the frontend UI.
 If an API proxy is enabled, calls flow through the Express backend before reaching the model provider.
 
 Browser (React UI)
-  ↓
+➜
 /api/
-  ↓
+➜
 Gemini Model Provider (Google AI Studio)
-  ↓
+➜
 JSON → Rendered Question/Explanation
 
 ## Project Structure
+```bash
 PREPMIND-AI-6/
 ├── client/                                # Frontend (React + Vite)
 │   ├── components/                        # Shared React UI components
@@ -87,7 +87,7 @@ PREPMIND-AI-6/
 ├── vite.config.js                         # Main Vite config (frontend build)
 └── vite.config.server.js                  # Vite config for server build/SSR
 └── LICENSE
-
+```
 ## Environment Configuration
   ### client/.env
   Used when the frontend calls the backend proxy on the same origin.
@@ -108,18 +108,20 @@ Requirements: Node.js 20 or later.
 Both services can run simultaneously during development.
 
 ### Production Build
-  ##Frontend build:
-  bash
-  cd client
-  npm ci
-  npm run build
 
-  ##Backend build:
-  bash
-  cd server
-  npm ci
-  npm run build
-  npm start
+#### Frontend build
+```bash
+cd client
+npm ci
+npm run build
+```
+#### Backend build
+```bash
+cd server
+npm ci
+npm run build
+npm start
+```
 
 You can serve the built frontend statically via Express by adding:
 app.use(express.static("client/dist"));
