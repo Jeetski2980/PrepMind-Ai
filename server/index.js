@@ -16,7 +16,7 @@ const app = express();
 // IMPORTANT: Render provides PORT automatically
 const PORT = Number(process.env.PORT) || 10000;
 
-// Middleware
+// Middleware (the middle between a request and the final response)
 app.use(express.json({ limit: "1mb" }));
 app.use(
   cors({
@@ -26,7 +26,6 @@ app.use(
 );
 
 //  API ROUTES 
-
 // Chat (Tutor)
 app.post("/api/chat", async (req, res) => {
   try {
@@ -52,6 +51,8 @@ app.post("/api/generate-questions", async (req, res) => {
 });
 
 //STATIC + SPA FALLBACK 
+//If someone types a route like /about, it tries /about.html
+//Show files from the dist folder. If missing, try adding .html
 const distDir = path.resolve(__dirname, "../dist");
 app.use(express.static(distDir, { extensions: ["html"] }));
 
@@ -62,9 +63,9 @@ app.head("/", (_req, res) => res.sendStatus(200));
 app.get(/^\/(?!api).*/, sendIndex);
 app.head(/^\/(?!api).*/, (_req, res) => res.sendStatus(200));
 
-// START 
+//local host message 
 app.listen(PORT, () => {
-  console.log(`✅ Server listening on :${PORT}`);
+  console.log(` Server listening on :${PORT}`);
   console.log("Has GEMINI_CHAT_API_KEY?", Boolean(process.env.GEMINI_CHAT_API_KEY));
   console.log("Has GEMINI_QA_API_KEY?", Boolean(process.env.GEMINI_QA_API_KEY));
 });
