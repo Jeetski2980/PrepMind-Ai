@@ -4,10 +4,10 @@
 @tailwind utilities;
 
 @layer base {
-  /**
-   * CSS Variables for Tailwind Theme (HSL Format)
-   * Syncs with tailwind.config.jss
-   */
+/* CSS Variables for Tailwind Theme */
+/* Syncs with tailwind.config.js */
+/*HSL, hsl(hue, saturation%, lightness%)*/
+
   :root {
     --background: 0 0% 100%;
     --foreground: 222.2 84% 4.9%;
@@ -39,7 +39,7 @@
 
     --radius: 0.5rem;
   }
-
+/* dark mode for variables */
   .dark {
     --background: 0 0% 0%;
     --foreground: 0 0% 100%;
@@ -80,13 +80,13 @@
     @apply bg-background text-foreground transition-colors duration-300 antialiased;
   }
 
-  /* Optional: Smooth dark override for layout shell */
+  /* Smooth dark override for layout shell */
   .dark body {
     background-color: #000000 !important;
     color: #ffffff !important;
   }
 
-  /* Optional: Add scroll behavior */
+  /* Add scroll behavior */
   html {
     scroll-behavior: smooth;
   }
