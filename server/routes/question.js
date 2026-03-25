@@ -1,7 +1,7 @@
 // server/routes/question.js
 import { getQaModel } from "../services/gemini.js";
 
-/** ---- System prompt (short & strict) ---- */
+//System prompt for practice test/question generator
 const QA_SYSTEM = `
 You are an AI exam question generator, respond instantly 
 
@@ -29,7 +29,7 @@ Rules:
 - NO markdown, NO additional text outside the JSON.
 `;
 
-/**  JSON schema compatible with Gemini (no additionalProperties/min/max/etc.)  */
+//  JSON schema compatible with Gemini 
 const schema = {
   type: "object",
   properties: {
@@ -58,7 +58,7 @@ const strip = (s) =>
     .replace(/[“”]/g, '"')
     .replace(/[‘’]/g, "'")
     .trim();
-
+//ERROR screen
 function safeJsonExtract(text) {
   const cleaned = strip(text);
   try { return JSON.parse(cleaned); } catch {}
@@ -110,7 +110,7 @@ function normalizePacket(obj) {
   return obj;
 }
 
-/** Build a concise user prompt */
+//Build a concise user specific prompt 
 function buildPrompt({ testType, subject, topic, count }) {
   return `
 Generate exactly ${count} multiple-choice questions.
@@ -128,7 +128,7 @@ Constraints:
   `.trim();
 }
 
-/** Ask Gemini once with JSON mode + schema */
+// Ask Gemini once with JSON mode + schema(the layout of data)
 async function askOnce({ testType, subject, topic, count }) {
   const model = getQaModel({
     systemInstruction: QA_SYSTEM,
@@ -150,7 +150,7 @@ async function askOnce({ testType, subject, topic, count }) {
   return normalizePacket(safeJsonExtract(raw));
 }
 
-/** Batch : generate in chunks of 5 and merge */
+// Batch : generate in chunks of 5 and merge 
 async function askBatched({ testType, subject, topic, total }) {
   const CHUNK = 5;
   const packets = [];
