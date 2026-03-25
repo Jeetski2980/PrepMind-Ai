@@ -17,7 +17,7 @@ Thumbs.db
 !.vscode/extensions.json
 .idea
 
-# 🔒 Secrets
+# Secrets (api key)
 .env
 .env.*
 !.env.example
