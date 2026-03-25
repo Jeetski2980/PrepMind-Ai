@@ -1,3 +1,4 @@
+// app routes and pages
 import "./global.css";
 import { createRoot } from "react-dom/client";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
@@ -22,4 +23,5 @@ function App() {
   );
 }
 
+// render app to root
 createRoot(document.getElementById("root")).render(<App />);
