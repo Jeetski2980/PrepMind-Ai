@@ -24,20 +24,20 @@ app.get("*", (req, res) => {
 
   res.sendFile(path.join(distPath, "index.html"));
 });
-
+//local host message
 app.listen(port, () => {
-  console.log(`🚀 PrepMind server running on port ${port}`);
-  console.log(`📱 Frontend: http://localhost:${port}`);
-  console.log(`🔧 API: http://localhost:${port}/api`);
+  console.log(` PrepMind server running on port ${port}`);
+  console.log(` Frontend: http://localhost:${port}`);
+  console.log(` API: http://localhost:${port}/api`);
 });
 
 // Graceful shutdown
 process.on("SIGTERM", () => {
-  console.log("🛑 Received SIGTERM, shutting down gracefully");
+  console.log(" Received SIGTERM, shutting down gracefully");
   process.exit(0);
 });
 
 process.on("SIGINT", () => {
-  console.log("🛑 Received SIGINT, shutting down gracefully");
+  console.log(" Received SIGINT, shutting down gracefully");
   process.exit(0);
 });
