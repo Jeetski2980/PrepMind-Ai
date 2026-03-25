@@ -16,13 +16,13 @@ Rules:
 - Always end numeric solutions with "Final Answer:" on its own line followed by the final value.
 - Prefer simplified exact forms when reasonable (e.g., fractions, radicals).
 `;
-
+// remove code blocks and extra backticks
 const stripCodeFences = (s) =>
   String(s || "")
     .replace(/```[\s\S]*?```/g, (m) => m.replace(/```/g, ""))
     .replace(/^`+|`+$/g, "")
     .trim();
-
+// remove markdown formatting, keep plain text
 const toPlainNoMarkdown = (s) =>
   stripCodeFences(s)
     .replace(/^\s*#+\s*/gm, "")
