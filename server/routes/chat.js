@@ -1,6 +1,6 @@
 // server/routes/chat.js
 import { getChatModel } from "../services/gemini.js";
-
+//starter prompt for ai chat bot
 const TUTOR_SYSTEM = `
 You are a helpful, concise SAT/ACT/AP tutor.
 
