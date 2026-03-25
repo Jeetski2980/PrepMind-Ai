@@ -91,13 +91,17 @@ PREPMIND-AI-6/
 ## Environment Configuration
   ### client/.env
   Used when the frontend calls the backend proxy on the same origin.
+  ```bash
   VITE_API_BASE=/api
+  ```
   ### server/.env
   Used to define server behavior and API keys.
+```bash
 PORT=8080
 ALLOWED_ORIGINS=https://prepmind.org,http://localhost:5173
 GOOGLE_AI_STUDIO_API_KEY=YOUR_KEY
 GOOGLE_AI_STUDIO_MODEL=gemini-2.5-flash
+```
 Notes:
 - Do not expose API keys in client-side builds.  
 
