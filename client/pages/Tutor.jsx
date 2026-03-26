@@ -7,7 +7,7 @@ import { MessageSquare, Send, Mic, MicOff, Volume2, VolumeX, User, Bot } from "l
 import Layout from "@/components/Layout.jsx";
 import { InlineMath, BlockMath } from "react-katex";
 import "katex/dist/katex.min.css";
-
+// stores chat messages + controls input, loading, voice, and scroll states
 export default function Tutor() {
   const [messages, setMessages] = useState([
     {
@@ -28,6 +28,7 @@ export default function Tutor() {
   const recognitionRef = useRef(null);
   const synthRef = useRef(null);
 
+// handles scrolling behavior (auto scroll + checking if user is near bottom)
   const scrollToBottom = () => {
     const el = messagesContainerRef.current;
     if (!el) return;
@@ -64,7 +65,7 @@ export default function Tutor() {
       synthRef.current?.cancel();
     };
   }, []);
-
+  // sets up speech recognition (voice input) + speech synthesis (text to speech)
   const startListening = () => {
     if (recognitionRef.current && !isListening) {
       setIsListening(true);
