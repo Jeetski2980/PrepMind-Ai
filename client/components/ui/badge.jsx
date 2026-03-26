@@ -1,8 +1,9 @@
 import { forwardRef } from "react";
 import { cn } from "@/lib/utils";
-
+// small label/tag component
 const Badge = forwardRef(
   ({ className, variant = "default", ...props }, ref) => {
+  // different color styles for badge
     const variantClasses = {
       default: "border-transparent bg-primary text-primary-foreground hover:bg-primary/80",
       secondary: "border-transparent bg-secondary text-secondary-foreground hover:bg-secondary/80",
@@ -26,4 +27,4 @@ const Badge = forwardRef(
 
 Badge.displayName = "Badge";
 
-export { Badge };
+export { Badge };  // export component
