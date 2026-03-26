@@ -2,7 +2,7 @@ import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Home, Search } from "lucide-react";
 import Layout from "@/components/Layout.jsx";
-
+// 404 page shown when user goes to a route that doesn't exist
 export default function NotFound() {
   return (
     <Layout>
