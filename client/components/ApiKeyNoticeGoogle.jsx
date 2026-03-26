@@ -1,5 +1,5 @@
 import { CheckCircle } from "lucide-react";
-
+//box showing AI is powered by Google Gemini
 export default function ApiKeyNoticeGoogle() {
   return (
     <div className="mb-6 rounded-xl border border-emerald-200/70 bg-emerald-50 px-4 py-3 dark:border-emerald-400/30 dark:bg-emerald-400/10">
