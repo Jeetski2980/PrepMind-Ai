@@ -1,6 +1,6 @@
 import { forwardRef } from "react";
 import { cn } from "@/lib/utils";
-
+// reusable textarea component with styling
 const Textarea = forwardRef(
   ({ className, ...props }, ref) => {
     return (
