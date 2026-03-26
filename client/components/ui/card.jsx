@@ -1,6 +1,7 @@
 import { forwardRef } from "react";
 import { cn } from "@/lib/utils";
-
+//reusable card UI component
+// main card container (box with border + shadow)
 const Card = forwardRef(
   ({ className, ...props }, ref) => (
     <div
@@ -14,7 +15,7 @@ const Card = forwardRef(
   )
 );
 Card.displayName = "Card";
-
+// top section of the card (usually for title or header)
 const CardHeader = forwardRef(
   ({ className, ...props }, ref) => (
     <div
@@ -25,7 +26,7 @@ const CardHeader = forwardRef(
   )
 );
 CardHeader.displayName = "CardHeader";
-
+// title text inside the card
 const CardTitle = forwardRef(
   ({ className, ...props }, ref) => (
     <h3
