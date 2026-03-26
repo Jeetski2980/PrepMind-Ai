@@ -2,11 +2,11 @@ import * as SelectPrimitive from "@radix-ui/react-select";
 import { Check, ChevronDown, ChevronUp } from "lucide-react";
 import { forwardRef } from "react";
 import { cn } from "@/lib/utils";
-
+//custom dropdown (select menu)
 const Select = SelectPrimitive.Root;
 const SelectGroup = SelectPrimitive.Group;
 const SelectValue = SelectPrimitive.Value;
-
+// main button that opens the dropdown
 const SelectTrigger = forwardRef(
   ({ className, children, ...props }, ref) => (
     <SelectPrimitive.Trigger
@@ -25,7 +25,7 @@ const SelectTrigger = forwardRef(
   )
 );
 SelectTrigger.displayName = SelectPrimitive.Trigger.displayName;
-
+// scroll up button inside dropdown
 const SelectScrollUpButton = forwardRef(
   ({ className, ...props }, ref) => (
     <SelectPrimitive.ScrollUpButton
@@ -57,7 +57,7 @@ const SelectScrollDownButton = forwardRef(
   )
 );
 SelectScrollDownButton.displayName = SelectPrimitive.ScrollDownButton.displayName;
-
+// dropdown menu content
 const SelectContent = forwardRef(
   ({ className, children, position = "popper", ...props }, ref) => (
     <SelectPrimitive.Portal>
