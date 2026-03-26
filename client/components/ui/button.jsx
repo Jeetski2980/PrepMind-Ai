@@ -1,17 +1,17 @@
 import { Slot } from "@radix-ui/react-slot";
 import { forwardRef } from "react";
 import { cn } from "@/lib/utils";
-
+//reusable button UI component
 const Button = forwardRef(
   ({ className, variant = "default", size = "default", asChild = false, ...props }, ref) => {
     const Comp = asChild ? Slot : "button";
-
+    // different style options
     const variantClasses = {
       default: "bg-primary text-primary-foreground hover:bg-primary/90",
       outline: "border border-input bg-background hover:bg-accent hover:text-accent-foreground",
       ghost: "hover:bg-accent hover:text-accent-foreground"
     };
-
+    // different size options
     const sizeClasses = {
       default: "h-10 px-4 py-2",
       sm: "h-9 rounded-md px-3",
@@ -35,4 +35,5 @@ const Button = forwardRef(
 
 Button.displayName = "Button";
 
-export { Button };
+export { Button };     // different size options
+
