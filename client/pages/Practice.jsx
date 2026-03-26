@@ -9,7 +9,7 @@ import ApiKeyNoticeGoogle from "@/components/ApiKeyNoticeGoogle";
 import { InlineMath, BlockMath } from "react-katex";
 import "katex/dist/katex.min.css";
 
-/* ---------- Config ---------- */
+// defines all exams and their subjects for dropdown selection
 
 const TEST_SUBJECTS = {
   SAT: ["Math", "Reading", "Writing"],
@@ -20,7 +20,7 @@ const TEST_SUBJECTS = {
     "US History","World History","Government","Psychology","Computer Science A"
   ],
 };
-
+// maps each subject to its list of topics for filtering or practice selection
 const TOPIC_OPTIONS = {
   Math: ["Algebra","Geometry","Trigonometry","Statistics","Functions"],
   Reading: ["Reading Comprehension","Vocabulary","Main Ideas","Inferences"],
@@ -46,11 +46,12 @@ const TOPIC_OPTIONS = {
 };
 
 /* ---------- Math rendering ---------- */
+// converts text into JSX with proper math rendering (KaTeX) and bold formatting
 const renderTextWithMath = (text) => {
   if (text == null) return null;
   let s = String(text);
 
-  // Normalize \( ... \) and \[ ... \]
+  // converts \( \) and \[ \] into $ and $$ format for KaTeX
   s = s
     .replace(/\\\(([\s\S]+?)\\\)/g, (_m, p1) => `$${p1}$`)
     .replace(/\\\[([\s\S]+?)\\\]/g, (_m, p1) => `$$${p1}$$`);
