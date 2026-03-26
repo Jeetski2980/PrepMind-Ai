@@ -1,6 +1,7 @@
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+//import icons
 import {
   Brain,
   BookOpen,
@@ -16,7 +17,7 @@ import Layout from "@/components/Layout.jsx";
 export default function Index() {
   return (
     <Layout>
-      {/* Hero Section */}
+      {/* Cards  */}
       <section className="relative overflow-hidden bg-gradient-to-br from-emerald-50 to-green-50 dark:from-black dark:to-black">
         {/* Floating elements */}
         <div className="absolute top-20 left-10 w-20 h-20 bg-emerald-100 dark:bg-emerald-400/10 rounded-full blur-xl opacity-60" />
