@@ -17,7 +17,7 @@ export default function Layout({ children }) {
       document.documentElement.classList.add("dark");
     }
   }, []);
-
+// toggles dark/light mode and saves choice
   const handleThemeToggle = () => {
     const newTheme = !isDarkMode;
     setIsDarkMode(newTheme);
