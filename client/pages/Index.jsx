@@ -66,7 +66,7 @@ export default function Index() {
             {/* Powered by Advanced AI badge */}
             <div className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-emerald-100 dark:bg-emerald-400/10 text-emerald-700 dark:text-emerald-400 mb-8">
               <Lightbulb className="w-4 h-4 mr-2" />
-              Powered by Advanced AI
+              Powered by Google Gemini AI
             </div>
 
             {/* Main headline */}
