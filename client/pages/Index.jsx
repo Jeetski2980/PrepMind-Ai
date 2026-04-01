@@ -1,3 +1,4 @@
+import { useEffect } from "react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -15,6 +16,42 @@ import {
 import Layout from "@/components/Layout.jsx";
 
 export default function Index() {
+  useEffect(() => {
+    const obj = document.getElementById("countryCount");
+
+    if (!obj) {
+      return undefined;
+    }
+
+    let startTimestamp = null;
+    let animationFrameId = null;
+
+    const animateValue = (target, start, end, duration) => {
+      const step = (timestamp) => {
+        if (!startTimestamp) {
+          startTimestamp = timestamp;
+        }
+
+        const progress = Math.min((timestamp - startTimestamp) / duration, 1);
+        target.textContent = Math.floor(progress * (end - start) + start);
+
+        if (progress < 1) {
+          animationFrameId = window.requestAnimationFrame(step);
+        }
+      };
+
+      animationFrameId = window.requestAnimationFrame(step);
+    };
+
+    animateValue(obj, 0, 21, 3200);
+
+    return () => {
+      if (animationFrameId) {
+        window.cancelAnimationFrame(animationFrameId);
+      }
+    };
+  }, []);
+
   return (
     <Layout>
       {/* Main Header */}
@@ -40,14 +77,18 @@ export default function Index() {
               <span className="text-emerald-600 dark:text-emerald-400">Not Harder.</span>
             </h1>
 
-            <p className="max-w-3xl mx-auto text-xl text-gray-600 dark:text-white/70 leading-relaxed mb-10">
-              Free AI-powered practice questions and personalized tutoring for SAT, ACT, and AP
-              exams. Just smarter studying.
+            <p className="max-w-3xl mx-auto text-xl text-gray-600 dark:text-white/70 leading-relaxed mb-6">
+              PrepMind provides free, high-quality SAT, ACT, and AP practice to help students gain
+              equal access to powerful study tools, so they have the same opportunities to succeed
+              as anyone else!
             </p>
 
-            <p className="max-w-3xl mx-auto text-lg text-gray-600 dark:text-white/70 leading-relaxed mb-10">
-              PrepMind provides free, high-quality SAT, ACT, and AP practice to help students gain equal access to powerful
-              study tools, so they have the same opportunities to succeed as anyone else!
+            <p className="text-[1.625rem] md:text-[1.95rem] font-semibold tracking-tight text-gray-900 dark:text-white mb-10">
+              Trusted by students in{" "}
+              <span id="countryCount" className="text-emerald-600 dark:text-emerald-400">
+                0
+              </span>
+              + countries
             </p>
 
             {/* CTA Buttons */}
