@@ -140,4 +140,5 @@ This allows a single deployment for both frontend and backend.
 
 ## Contact
 Author: Jeet Anil  
+Email: support@prepmind.org
 Website: (https://prepmind.org)  
