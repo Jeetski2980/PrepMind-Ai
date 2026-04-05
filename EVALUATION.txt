@@ -1,0 +1,6 @@
+PrepMind was designed to give students free, high-quality ACT, SAT, and AP preparation in a simple and helpful format. The final product meets this goal by providing practice tools, tutoring support, and an easy-to-use interface for students.
+My program produces relevant and accurate output by giving users helpful academic support and organized prep resources. It is reliable because the features are built to work consistently, and it is robust because it can support different types of users and study needs.
+Compared to the original goal, the final result successfully creates a test prep platform that is useful, functional, and focused on student success.
+
+Reflection:
+One strength of PrepMind is that it combines multiple study tools into one platform. A future improvement would be adding even more personalized feedback and progress tracking for students.
