@@ -1,8 +1,8 @@
 # Prep Mind AI
 
-Live site: [https://prepmind.org](https://prepmind.org)  
+Live site: [prepmind.org](https://prepmind.org)  
 Video demonstration:  --------------------------------  
-Github: https://github.com/Jeetski2980/PrepMind-Ai  
+Github:github.com/Jeetski2980/PrepMind-Ai  
 License: [MIT](./LICENSE)
 
 ## Overview
