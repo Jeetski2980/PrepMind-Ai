@@ -136,7 +136,7 @@ async function askOnce({ testType, subject, topic, count }) {
       temperature: 0.35,
       topK: 40,
       topP: 0.9,
-      maxOutputTokens: 8192,
+      maxOutputTokens: 4096,
       responseMimeType: "application/json",
       responseSchema: schema
     }
