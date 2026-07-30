@@ -1,6 +1,7 @@
 // server/routes/chat.js
 import { getChatModel } from "../services/gemini.js";
-//starter prompt for ai chat bot
+
+// starter prompt for ai chat bot
 const TUTOR_SYSTEM = `
 You are a helpful, concise SAT/ACT/AP tutor.
 
@@ -16,12 +17,14 @@ Rules:
 - Always end numeric solutions with "Final Answer:" on its own line followed by the final value.
 - Prefer simplified exact forms when reasonable (e.g., fractions, radicals).
 `;
+
 // remove code blocks and extra backticks
 const stripCodeFences = (s) =>
   String(s || "")
     .replace(/```[\s\S]*?```/g, (m) => m.replace(/```/g, ""))
     .replace(/^`+|`+$/g, "")
     .trim();
+
 // remove markdown formatting, keep plain text
 const toPlainNoMarkdown = (s) =>
   stripCodeFences(s)
@@ -33,9 +36,17 @@ const toPlainNoMarkdown = (s) =>
     .trim();
 
 export async function generateChatResponse(userMessage = "") {
-  const model = getChatModel({ systemInstruction: TUTOR_SYSTEM });
+  const model = getChatModel({
+    systemInstruction: TUTOR_SYSTEM,
+    generationConfig: {
+      temperature: 0.4,
+      maxOutputTokens: 1000,
+    },
+  });
   const res = await model.generateContent({
-    contents: [{ role: "user", parts: [{ text: userMessage.trim() }]}],
+    contents: [
+      { role: "user", parts: [{ text: userMessage.trim() }] },
+    ],
   });
   const text = res?.response?.text?.() ?? "";
   return toPlainNoMarkdown(text); // keep $...$ intact for KaTeX
