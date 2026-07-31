@@ -7,6 +7,7 @@ import Index from "./pages/Index";
 import Practice from "./pages/Practice";
 import Tutor from "./pages/Tutor";
 import About from "./pages/About";
+import Terms from "./pages/Terms";
 import NotFound from "./pages/NotFound";
 
 function App() {
@@ -17,6 +18,7 @@ function App() {
         <Route path="/practice" element={<Practice />} />
         <Route path="/tutor" element={<Tutor />} />
         <Route path="/about" element={<About />} />
+        <Route path="/terms" element={<Terms />} />
         <Route path="*" element={<NotFound />} />
       </Routes>
     </BrowserRouter>
