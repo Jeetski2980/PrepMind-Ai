@@ -116,7 +116,7 @@ export default function About() {
                   <div className="flip-front-content">
                     <h3 className="text-xl font-semibold mb-4 text-white">Student-Focused</h3>
                     <p className="text-gray-300 leading-relaxed">
-                      Built with purpose, not account or databases—PrepMind runs efficiently to stay free for every sutdent, ensuring equal access and opportunity for all learns.
+                      Built with purpose and without accounts or databases, PrepMind runs efficiently to stay free for every student, helping provide equal access and opportunity for all learners.
                     </p>
                   </div>
                 </div>
