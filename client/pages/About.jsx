@@ -220,7 +220,7 @@ export default function About() {
               </div>
             </CardContent>
           </Card>
-               {/* Donation Button */}
+          {/* Donation and donor sections temporarily hidden.
           <Card className="bg-white shadow-md border border-gray-200 rounded-lg mb-12">
             <CardContent className="p-8 text-center bg-white">
               <h2 className="text-2xl font-bold mb-2 text-black">
@@ -240,7 +240,6 @@ export default function About() {
               </a>
             </CardContent>
           </Card>
-                     {/* Donor Graph */}
           <Card className="bg-white shadow-md border border-gray-200 rounded-lg mb-12">
             <CardContent className="p-8 text-center bg-white">
               <h2 className="text-2xl font-bold mb-2 text-black">
@@ -260,6 +259,7 @@ export default function About() {
               </div>
             </CardContent>
           </Card>
+          */}
         </div>
       </div>
     </Layout>
