@@ -35,7 +35,7 @@ const TEST_SUBJECTS = {
 };
 // maps each subject to its list of topics for filtering or practice selection
 const TOPIC_OPTIONS = {
-  Math: ["Algebra", "Advanced Math", "Problem-Solving and Data Analysis", "Geometry and Trigonometry"],
+  Math: ["Algebra", "Geometry", "Trigonometry", "Statistics", "Functions"],
   "Reading and Writing": ["Information and Ideas", "Craft and Structure", "Expression of Ideas", "Standard English Conventions"],
   Reading: ["Reading Comprehension", "Vocabulary", "Main Ideas", "Inferences"],
   English: ["Grammar", "Punctuation", "Style", "Strategy"],
