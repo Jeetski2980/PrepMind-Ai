@@ -212,7 +212,7 @@ export default function Index() {
             Ready to Transform Your Test Prep?
           </h2>
           <p className="text-xl text-gray-300 mb-8">
-            Join thousands of students who are preparing smarter with AI-powered practice questions and tutoring.
+            Prepare smarter with AI-powered practice questions and tutoring.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Link to="/practice">
