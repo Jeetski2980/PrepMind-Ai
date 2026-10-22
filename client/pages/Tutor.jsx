@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
 import ApiKeyNoticeGoogle from "@/components/ApiKeyNoticeGoogle";
-import { MessageSquare, Send, Mic, MicOff, Volume2, VolumeX, User, Bot } from "lucide-react";
+import { MessageSquare, Send, Mic, MicOff, Volume2, VolumeX, User, Bot, Maximize2, Minimize2 } from "lucide-react";
 import Layout from "@/components/Layout.jsx";
 import { InlineMath, BlockMath } from "react-katex";
 import "katex/dist/katex.min.css";
@@ -13,7 +13,7 @@ export default function Tutor() {
     {
       id: 1,
       text:
-        "Hi, I'm here to help you understand SAT, ACT, and AP exam concepts. Try typing or using your voice to ask me anything about test prep!",
+        "Hi! What are you working on? I can help explain a step or review a concept with you.",
       isUser: false,
       timestamp: new Date(),
     },
@@ -23,6 +23,7 @@ export default function Tutor() {
   const [isListening, setIsListening] = useState(false);
   const [isSpeaking, setIsSpeaking] = useState(false);
   const [shouldAutoScroll, setShouldAutoScroll] = useState(true);
+  const [isFullScreen, setIsFullScreen] = useState(false);
 
   const messagesContainerRef = useRef(null);
   const recognitionRef = useRef(null);
@@ -42,7 +43,7 @@ export default function Tutor() {
   };
   useEffect(() => {
     if (shouldAutoScroll) scrollToBottom();
-  }, [messages, shouldAutoScroll]);
+  }, [messages, shouldAutoScroll, isFullScreen]);
 
   useEffect(() => {
     if ("webkitSpeechRecognition" in window || "SpeechRecognition" in window) {
@@ -65,6 +66,14 @@ export default function Tutor() {
       synthRef.current?.cancel();
     };
   }, []);
+  useEffect(() => {
+    if (!isFullScreen) return undefined;
+    const handleEscape = (event) => {
+      if (event.key === "Escape") setIsFullScreen(false);
+    };
+    window.addEventListener("keydown", handleEscape);
+    return () => window.removeEventListener("keydown", handleEscape);
+  }, [isFullScreen]);
   // sets up speech recognition (voice input) + speech synthesis (text to speech)
   const startListening = () => {
     if (recognitionRef.current && !isListening) {
@@ -114,8 +123,8 @@ export default function Tutor() {
     }
   }
 
-  const sendMessage = async () => {
-    const trimmed = inputText.trim();
+  const sendMessage = async (messageText) => {
+    const trimmed = (typeof messageText === "string" ? messageText : inputText).trim();
     if (!trimmed || isLoading) return;
 
     const userMessage = {
@@ -231,27 +240,14 @@ export default function Tutor() {
     });
   };
 
-  return (
-    <Layout>
-      <div className="min-h-screen bg-gray-50 dark:bg-black py-8">
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
-          {/* Header */}
-          <div className="text-center mb-8">
-            <div className="w-16 h-16 bg-emerald-100 dark:bg-emerald-400/10 rounded-full flex items-center justify-center mx-auto mb-4">
-              <MessageSquare className="w-8 h-8 text-emerald-600 dark:text-emerald-400" />
-            </div>
-            <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
-              Your AI Tutor
-            </h1>
-            <p className="text-gray-600 dark:text-white/70">
-              Ask me anything about test prep. Try typing or using your voice.
-            </p>
-          </div>
-
-          <ApiKeyNoticeGoogle />
-
-          {/* Chat Container */}
-          <Card className="bg-white dark:bg-black border dark:border-white/30 h-[600px] flex flex-col">
+  const starterPrompts = [
+    "Can you explain how slope works?",
+    "Help me set up this word problem.",
+    "Why is this answer choice wrong?",
+  ];
+  const hasStarted = messages.some((message) => message.isUser);
+  const chatPanel = (
+          <Card className={"flex flex-col border bg-white dark:border-white/30 dark:bg-black " + (isFullScreen ? "h-full min-h-0" : "h-[520px]")}>
             {/* Messages */}
             <div
               ref={messagesContainerRef}
@@ -355,7 +351,7 @@ export default function Tutor() {
                     }}
                     maxLength={350}
                     onKeyDown={handleKeyDown}
-                    placeholder="Ask me anything... (max 350 characters)"
+                    aria-label="Your message" placeholder="Ask me anything... (max 350 characters)"
                     className="min-h-[60px] pr-12 resize-none dark:bg-black dark:border-white/50 dark:text-white"
                     disabled={isLoading}
                   />
@@ -365,6 +361,7 @@ export default function Tutor() {
                   <Button
                     variant="ghost"
                     size="sm"
+                    aria-label={isListening ? "Stop voice input" : "Start voice input"}
                     onClick={isListening ? stopListening : startListening}
                     className={`absolute bottom-2 right-2 p-2 h-8 w-8 ${
                       isListening
@@ -380,7 +377,8 @@ export default function Tutor() {
                   </Button>
                 </div>
                 <Button
-                  onClick={sendMessage}
+                  aria-label="Send message"
+                  onClick={() => sendMessage()}
                   disabled={!inputText.trim() || isLoading}
                   className="h-[60px] bg-emerald-600 dark:bg-emerald-400 hover:bg-emerald-700 dark:hover:bg-emerald-500 text-white dark:text-black"
                 >
@@ -389,8 +387,111 @@ export default function Tutor() {
               </div>
             </div>
           </Card>
-        </div>
+  );
+
+  if (isFullScreen) {
+    return (
+      <div className="fixed inset-0 z-[100] flex h-screen flex-col bg-gray-50 text-gray-950 dark:bg-black dark:text-white">
+        <header className="flex shrink-0 items-center justify-between border-b border-gray-200 bg-white px-4 py-3 dark:border-white/10 dark:bg-black sm:px-8">
+          <div>
+            <p className="font-semibold">PrepMind tutor</p>
+            <p className="text-xs text-gray-500 dark:text-white/50">Your conversation is ready to continue</p>
+          </div>
+          <Button
+            type="button"
+            variant="outline"
+            onClick={() => setIsFullScreen(false)}
+            className="rounded-full border-gray-300 bg-white dark:border-white/20 dark:bg-white/5 dark:text-white"
+          >
+            <Minimize2 className="mr-2 h-4 w-4" aria-hidden="true" />
+            Back to preview
+          </Button>
+        </header>
+        <main className="min-h-0 flex-1 px-3 py-3 sm:px-6 sm:py-5">
+          <div className="mx-auto h-full max-w-6xl">
+            {chatPanel}
+          </div>
+        </main>
       </div>
+    );
+  }
+
+  return (
+    <Layout>
+      <main className="min-h-screen bg-gradient-to-b from-emerald-50/70 to-white px-4 py-10 dark:from-black dark:to-black sm:px-6">
+        <div className="mx-auto max-w-4xl">
+          <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+            <div>
+              <p className="mb-2 text-sm font-semibold uppercase tracking-[0.14em] text-emerald-700 dark:text-emerald-400">Study space</p>
+              <h1 className="text-3xl font-bold tracking-tight text-gray-950 dark:text-white sm:text-4xl">Study with a tutor</h1>
+              <p className="mt-2 max-w-2xl text-gray-600 dark:text-white/65">
+                Ask about a question, a concept, or the step that’s not clicking yet.
+              </p>
+            </div>
+            <div className="flex items-center gap-2 self-start rounded-full border border-emerald-800/10 bg-white/80 px-4 py-2 text-sm text-gray-600 dark:border-white/10 dark:bg-white/5 dark:text-white/65 sm:self-auto">
+              <span className="h-2 w-2 rounded-full bg-emerald-500" />
+              Start with one of these prompts
+            </div>
+          </div>
+
+          <ApiKeyNoticeGoogle />
+
+          <section className="mb-4 rounded-2xl border border-gray-200 bg-white/80 p-4 dark:border-white/10 dark:bg-white/[0.03] sm:p-5">
+            {hasStarted ? (
+              <div className="flex items-center gap-3">
+                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-emerald-100 text-emerald-800 dark:bg-emerald-400/15 dark:text-emerald-300">
+                  <MessageSquare className="h-5 w-5" aria-hidden="true" />
+                </div>
+                <div>
+                  <p className="font-semibold text-gray-900 dark:text-white">Conversation started</p>
+                  <p className="text-sm text-gray-500 dark:text-white/55">Continue here, or open it in full chat.</p>
+                </div>
+              </div>
+            ) : (
+              <>
+                <p className="mb-3 text-sm font-semibold text-gray-900 dark:text-white">Try a question to get started</p>
+                <div className="flex flex-wrap gap-2">
+                  {starterPrompts.map((prompt) => (
+                    <button
+                      key={prompt}
+                      type="button"
+                      onClick={() => sendMessage(prompt)}
+                      disabled={isLoading}
+                      className="rounded-full border border-gray-200 bg-white px-4 py-2.5 text-left text-sm text-gray-700 transition hover:border-emerald-500 hover:bg-emerald-50 hover:text-emerald-900 disabled:cursor-wait disabled:opacity-50 dark:border-white/15 dark:bg-white/[0.03] dark:text-white/75 dark:hover:border-emerald-400 dark:hover:bg-emerald-400/10 dark:hover:text-emerald-200"
+                    >
+                      {prompt}
+                    </button>
+                  ))}
+                </div>
+              </>
+            )}
+          </section>
+
+          <div className="mx-auto max-w-4xl">
+            <div className="mb-3 flex items-center gap-2 text-sm font-medium text-gray-600 dark:text-white/60">
+              <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-emerald-100 text-emerald-800 dark:bg-emerald-400/15 dark:text-emerald-300">
+                <MessageSquare className="h-4 w-4" aria-hidden="true" />
+              </span>
+              Your tutor chat
+            </div>
+            {chatPanel}
+          </div>
+
+          {hasStarted && !isLoading && (
+            <div className="mt-4 flex flex-col items-start gap-2 sm:flex-row sm:items-center sm:justify-between">
+              <p className="text-sm text-gray-500 dark:text-white/50">Your messages stay in this chat when you expand it.</p>
+              <Button
+                type="button"
+                onClick={() => setIsFullScreen(true)}
+                className="rounded-full bg-emerald-700 px-5 text-white hover:bg-emerald-800 dark:bg-emerald-400 dark:text-black dark:hover:bg-emerald-300"
+              >
+                Continue in full chat
+                <Maximize2 className="ml-2 h-4 w-4" aria-hidden="true" />
+              </Button>
+            </div>
+          )}
+        </div>
+      </main>
     </Layout>
   );
 }
