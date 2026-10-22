@@ -96,14 +96,26 @@ app.post(
   geminiConcurrencyLimit,
   async (req, res) => {
     try {
-      const { message } = req.body || {};
+      const { message, history } = req.body || {};
       if (!validShortText(message, 350)) {
         return res.status(400).json({
           error: "Your message must be between 1 and 350 characters.",
         });
       }
 
-      const content = await generateChatResponse(message);
+      const safeHistory = Array.isArray(history)
+        ? history
+            .slice(-10)
+            .filter(
+              (turn) =>
+                turn &&
+                ["user", "model"].includes(turn.role) &&
+                validShortText(turn.text, 900)
+            )
+            .map((turn) => ({ role: turn.role, text: turn.text.trim() }))
+        : [];
+
+      const content = await generateChatResponse(message, safeHistory);
       res.json({ content });
     } catch (err) {
       console.error("[/api/chat] error:", err?.message || err);
