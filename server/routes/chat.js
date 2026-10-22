@@ -35,7 +35,7 @@ const toPlainNoMarkdown = (s) =>
     .replace(/_(.*?)_/g, "$1")
     .trim();
 
-export async function generateChatResponse(userMessage = "") {
+export async function generateChatResponse(userMessage = "", history = []) {
   const model = getChatModel({
     systemInstruction: TUTOR_SYSTEM,
     generationConfig: {
@@ -43,8 +43,24 @@ export async function generateChatResponse(userMessage = "") {
       maxOutputTokens: 1000,
     },
   });
+  const priorMessages = Array.isArray(history)
+    ? history
+        .slice(-10)
+        .filter(
+          (turn) =>
+            turn &&
+            ["user", "model"].includes(turn.role) &&
+            typeof turn.text === "string" &&
+            turn.text.trim()
+        )
+        .map((turn) => ({
+          role: turn.role,
+          parts: [{ text: turn.text.trim().slice(0, 900) }],
+        }))
+    : [];
   const res = await model.generateContent({
     contents: [
+      ...priorMessages,
       { role: "user", parts: [{ text: userMessage.trim() }] },
     ],
   });
