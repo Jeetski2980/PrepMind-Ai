@@ -103,12 +103,12 @@ export default function Tutor() {
     setIsSpeaking(false);
   };
 
-  async function sendChat(userText) {
+  async function sendChat(userText, history = []) {
     try {
       const res = await fetch("/api/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ message: userText }),
+        body: JSON.stringify({ message: userText, history }),
       });
       if (!res.ok) {
         const err = await res.json().catch(() => ({}));
@@ -138,7 +138,14 @@ export default function Tutor() {
     setIsLoading(true);
 
     try {
-      const replyText = await sendChat(userMessage.text);
+      const history = messages
+        .filter((message) => message.id !== 1)
+        .slice(-10)
+        .map((message) => ({
+          role: message.isUser ? "user" : "model",
+          text: String(message.text ?? "").slice(0, 900),
+        }));
+      const replyText = await sendChat(userMessage.text, history);
       const aiMessage = {
         id: Date.now() + 1,
         text:
