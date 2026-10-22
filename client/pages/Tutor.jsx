@@ -411,7 +411,7 @@ export default function Tutor() {
             className="rounded-full border-gray-300 bg-white dark:border-white/20 dark:bg-white/5 dark:text-white"
           >
             <Minimize2 className="mr-2 h-4 w-4" aria-hidden="true" />
-            Back to preview
+            Minimize chat
           </Button>
         </header>
         <main className="min-h-0 flex-1 px-3 py-3 sm:px-6 sm:py-5">
@@ -437,7 +437,7 @@ export default function Tutor() {
             </div>
             <div className="flex items-center gap-2 self-start rounded-full border border-emerald-800/10 bg-white/80 px-4 py-2 text-sm text-gray-600 dark:border-white/10 dark:bg-white/5 dark:text-white/65 sm:self-auto">
               <span className="h-2 w-2 rounded-full bg-emerald-500" />
-              Start with one of these prompts
+              {hasStarted ? "Conversation in progress" : "Start with one of these prompts"}
             </div>
           </div>
 
