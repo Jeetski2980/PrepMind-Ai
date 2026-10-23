@@ -103,10 +103,20 @@ function normalizeStandaloneMathExpression(expression) {
   return normalizeMathExpression(expression);
 }
 
+function unwrapMathTags(value) {
+  return String(value)
+    .replace(/&lt;(\/?)math\b[^&]*?&gt;/gi, (tag, closing) => closing ? "</math>" : "<math>")
+    .replace(/<math\b[^>]*>([\s\S]*?)<\/math\s*>/gi, (_match, expression) => {
+      let math = expression.trim();
+      if (math.startsWith("$") && math.endsWith("$")) math = math.slice(1, -1).trim();
+      return `\\(${math}\\)`;
+    });
+}
+
 export function renderTextWithMath(value, { inferStandaloneMath = false } = {}) {
   if (value == null) return null;
 
-  const text = restoreEscapedLatex(value);
+  const text = unwrapMathTags(restoreEscapedLatex(value));
   const parts = text.split(MATH_DELIMITER).filter(Boolean);
 
   return parts.map((part, index) => {
