@@ -61,24 +61,35 @@ function httpError(status, message) {
   return error;
 }
 
-function readLocalGroqKey() {
+function readLocalGroqKeys() {
   try {
-    const localEnv = dotenv.parse(readFileSync(new URL("../.env", import.meta.url), "utf8"));
-    return localEnv.GROQ_API_KEY?.trim() || "";
+    return dotenv.parse(readFileSync(new URL("../.env", import.meta.url), "utf8"));
   } catch {
-    return "";
+    return {};
   }
 }
 
-function getGroqKey() {
-  const key = readLocalGroqKey() || process.env.GROQ_API_KEY?.trim();
-  if (!key) throw httpError(503, "GROQ_API_KEY is not configured in the server environment.");
-  return key;
+let nextGroqKeyIndex = 0;
+function getGroqKeys() {
+  const localKeys = readLocalGroqKeys();
+  return [...new Set([
+    localKeys.GROQ_API_KEY?.trim() || process.env.GROQ_API_KEY?.trim(),
+    localKeys.GROQ_API_KEY_2?.trim() || process.env.GROQ_API_KEY_2?.trim(),
+  ].filter(Boolean))];
+}
+
+function getGroqKey(preferredIndex) {
+  const keys = getGroqKeys();
+  if (keys.length === 0) throw httpError(503, "GROQ_API_KEY is not configured in the server environment.");
+  const index = Number.isInteger(preferredIndex)
+    ? preferredIndex % keys.length
+    : nextGroqKeyIndex++ % keys.length;
+  return { apiKey: keys[index], index, keyCount: keys.length };
 }
 
 function providerErrorMessage(status) {
   if (status === 401 || status === 403) {
-    return "Groq rejected the API key. Check GROQ_API_KEY in the server environment.";
+    return "Groq rejected an API key. Check GROQ_API_KEY and GROQ_API_KEY_2 in the server environment.";
   }
   if (status === 402) {
     return "Groq reports that the account needs billing or credits. Check your Groq Console.";
@@ -100,8 +111,11 @@ async function createCompletion({
   responseFormat,
   includeFinishReason = false,
   retryStructuredGeneration = true,
+  retryAlternateKey = true,
+  preferredKeyIndex,
 }) {
-  const apiKey = getGroqKey();
+  const selectedKey = getGroqKey(preferredKeyIndex);
+  const { apiKey } = selectedKey;
   const model = kind === "chat" ? MODEL_CHAT : MODEL_QA;
   const isGptOss = model.startsWith("openai/gpt-oss-");
   let response;
@@ -128,6 +142,19 @@ async function createCompletion({
   const packet = await response.json().catch(() => null);
   if (!response.ok) {
     const providerMessage = packet?.error?.message;
+    if ([401, 403, 402, 429].includes(response.status) && retryAlternateKey && selectedKey.keyCount > 1) {
+      console.warn(`[Groq] key ${selectedKey.index + 1} failed with HTTP ${response.status}; trying the alternate key`);
+      return createCompletion({
+        kind,
+        messages,
+        maxCompletionTokens,
+        responseFormat,
+        includeFinishReason,
+        retryStructuredGeneration,
+        retryAlternateKey: false,
+        preferredKeyIndex: (selectedKey.index + 1) % selectedKey.keyCount,
+      });
+    }
     if (
       kind === "qa" &&
       response.status === 400 &&
@@ -394,5 +421,6 @@ app.head(/^\/(?!api).*/, (_req, res) => {
 
 app.listen(PORT, HOST, () => {
   console.log(`PrepMind API server listening at http://${HOST}:${PORT}`);
-  console.log(`Groq key loaded: ${readLocalGroqKey() || process.env.GROQ_API_KEY?.trim() ? "yes" : "no, add it to .env"}`);
+  const loadedGroqKeyCount = getGroqKeys().length;
+  console.log(`Groq API keys loaded: ${loadedGroqKeyCount || "none; add GROQ_API_KEY to the server environment"}`);
 });
