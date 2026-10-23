@@ -511,9 +511,11 @@ export default function Practice() {
                       {topic ? " · " + topic : ""}
                       {testType && subject ? " · " + numQuestions + " questions" : ""}
                     </p>
-                    <p className="mt-1 text-sm text-gray-500 dark:text-white/55">
-                      {testType && subject ? "Ready when you are." : "Choose an exam and subject to get started."}
-                    </p>
+                    {!(testType && subject) && (
+                      <p className="mt-1 text-sm text-gray-500 dark:text-white/55">
+                        Choose an exam and subject to get started.
+                      </p>
+                    )}
                   </div>
                   <Button
                     type="button"
