@@ -5,7 +5,7 @@ import {
   ArrowRight,
   BookOpen,
   CheckCircle2,
-  Lightbulb,
+  HardDrive,
   MessageSquare,
 } from "lucide-react";
 import Layout from "@/components/Layout.jsx";
@@ -52,24 +52,19 @@ export default function Index() {
         <section className="relative border-b border-emerald-950/10 bg-gradient-to-br from-emerald-50 via-white to-green-50 dark:border-white/10 dark:from-black dark:via-black dark:to-emerald-950/30">
           <div className="pointer-events-none absolute -right-24 top-16 h-80 w-80 rounded-full bg-emerald-300/20 blur-3xl dark:bg-emerald-400/10" />
           <div className="pointer-events-none absolute -left-20 bottom-0 h-64 w-64 rounded-full bg-lime-300/20 blur-3xl dark:bg-lime-400/5" />
-          <div className="relative mx-auto grid max-w-7xl items-center gap-14 px-4 py-14 sm:px-6 sm:py-20 lg:grid-cols-[1.05fr_0.95fr] lg:px-8 lg:py-24">
+          <div className="relative mx-auto grid max-w-7xl items-start gap-14 px-4 py-14 sm:px-6 sm:py-20 lg:grid-cols-[1.05fr_0.95fr] lg:px-8 lg:py-24">
             <div className="max-w-2xl">
-              <div className="mb-7 inline-flex items-center gap-2 rounded-full border border-emerald-800/10 bg-white/80 px-4 py-2 text-sm font-medium text-emerald-900 shadow-sm dark:border-emerald-300/20 dark:bg-white/5 dark:text-emerald-200">
-                <Lightbulb className="h-4 w-4" aria-hidden="true" />
-                Powered by Google Gemini AI
-              </div>
-
-              <h1 className="max-w-2xl text-[3.125rem] font-bold leading-[1.04] tracking-tight sm:text-[4.125rem] lg:text-[5rem]">
+              <h1 className="home-hero-reveal max-w-2xl text-[3.125rem] font-bold leading-[1.04] tracking-tight sm:text-[4.125rem] lg:text-[5rem]">
                 Prep smarter,
                 <br />
                 <span className="text-emerald-700 dark:text-emerald-400">not harder.</span>
               </h1>
-              <p className="mt-6 max-w-xl text-lg leading-8 text-gray-600 dark:text-white/70 sm:text-xl">
+              <p className="home-hero-reveal home-hero-reveal-1 mt-6 max-w-xl text-lg leading-8 text-gray-600 dark:text-white/70 sm:text-xl">
                 Free, focused SAT, ACT, and AP practice to help you feel ready for what comes next.
                 Learn at your pace, with tools built around the way students study.
               </p>
 
-              <div className="mt-8 flex flex-col gap-3 sm:flex-row">
+              <div className="home-hero-reveal home-hero-reveal-2 mt-8 flex flex-col gap-3 sm:flex-row">
                 <Link
                   to="/practice"
                   className="inline-flex items-center justify-center gap-2 rounded-full bg-emerald-700 px-6 py-3.5 font-semibold text-white shadow-lg shadow-emerald-900/15 transition hover:-translate-y-0.5 hover:bg-emerald-800 focus:outline-none focus:ring-2 focus:ring-emerald-600 focus:ring-offset-2 dark:bg-emerald-400 dark:text-black dark:hover:bg-emerald-300"
@@ -84,7 +79,7 @@ export default function Index() {
                 </Link>
               </div>
 
-              <p className="mt-9 max-w-2xl text-[1.625rem] font-semibold leading-snug tracking-tight text-gray-950 dark:text-white md:text-[1.95rem]">
+              <p className="home-hero-reveal home-hero-reveal-3 mt-9 max-w-2xl text-[1.625rem] font-semibold leading-snug tracking-tight text-gray-950 dark:text-white md:text-[1.95rem]">
                 Trusted by students in over{" "}
                 <span id="countryCount" className="country-count mx-1 inline-block align-baseline text-[2.75rem] font-extrabold leading-none text-emerald-700 dark:text-emerald-400 sm:text-[3.25rem]">
                   0
@@ -94,7 +89,7 @@ export default function Index() {
             </div>
 
             <div className="mx-auto w-full max-w-xl lg:ml-auto">
-              <div className="rounded-[1.75rem] bg-white p-4 shadow-2xl shadow-emerald-950/[0.08] dark:bg-[#0b110d] sm:p-6">
+              <div className="home-hero-reveal home-hero-reveal-2 rounded-[1.75rem] bg-white p-4 shadow-2xl shadow-emerald-950/[0.08] dark:bg-[#0b110d] sm:p-6">
                 <div className="flex items-center justify-between gap-4">
                   <p className="text-xs font-bold uppercase tracking-[0.14em] text-gray-800 dark:text-white/80 sm:text-sm">
                     Practice Session
@@ -189,10 +184,10 @@ export default function Index() {
             </article>
             <article className="rounded-3xl border border-gray-200 bg-white p-7 transition hover:-translate-y-1 hover:shadow-xl dark:border-white/10 dark:bg-white/[0.03]">
               <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-emerald-100 text-emerald-800 dark:bg-emerald-400/15 dark:text-emerald-300">
-                <Lightbulb className="h-6 w-6" aria-hidden="true" />
+                <HardDrive className="h-6 w-6" aria-hidden="true" />
               </div>
-              <h3 className="mt-5 text-xl font-semibold">Understand each answer</h3>
-              <p className="mt-2 leading-7 text-gray-600 dark:text-white/65">Review clear explanations after every practice set and learn from the steps you take.</p>
+              <h3 className="mt-5 text-xl font-semibold">Your progress stays yours</h3>
+              <p className="mt-2 leading-7 text-gray-600 dark:text-white/65">Your chat history and practice progress are saved in this browser on your device. No account or sign-in required.</p>
             </article>
             <article className="rounded-3xl border border-gray-200 bg-white p-7 transition hover:-translate-y-1 hover:shadow-xl dark:border-white/10 dark:bg-white/[0.03]">
               <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-emerald-100 text-emerald-800 dark:bg-emerald-400/15 dark:text-emerald-300">

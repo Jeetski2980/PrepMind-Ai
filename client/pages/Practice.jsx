@@ -124,6 +124,8 @@ export default function Practice() {
   const [score, setScore] = useState(null);
   const [isPracticeReady, setIsPracticeReady] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
+  const [generatingExplanationIndex, setGeneratingExplanationIndex] = useState(null);
+  const [explanationErrors, setExplanationErrors] = useState({});
   const [error, setError] = useState("");
 
   useEffect(() => {
@@ -251,6 +253,54 @@ export default function Practice() {
     setIsGenerating(false);
   }
 
+  async function generateMoreExplanation(question, questionIndex) {
+    if (question.moreExplanation || generatingExplanationIndex !== null) return;
+    setGeneratingExplanationIndex(questionIndex);
+    setExplanationErrors((previous) => ({ ...previous, [questionIndex]: "" }));
+
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 60000);
+    try {
+      const answerIndex = Number.isInteger(question.answerIndex)
+        ? question.answerIndex
+        : ({ A: 0, B: 1, C: 2, D: 3 }[question.answer?.toUpperCase()] ?? 0);
+      const answer = ["A", "B", "C", "D"][answerIndex];
+      const response = await fetch("/api/expand-explanation", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          testType,
+          subject,
+          topic: topic || "General",
+          question: question.question,
+          choices: question.choices,
+          answer,
+          answerIndex,
+          explanation: question.explanation,
+        }),
+        signal: controller.signal,
+      });
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(data.error || "Could not generate a longer explanation.");
+      if (typeof data.explanation !== "string" || !data.explanation.trim()) {
+        throw new Error("The longer explanation was empty. Please try again.");
+      }
+      setQuestions((previous) => previous.map((item, index) =>
+        index === questionIndex ? { ...item, moreExplanation: data.explanation.trim() } : item
+      ));
+    } catch (requestError) {
+      const message = requestError.name === "AbortError"
+        ? "This explanation is taking too long. Please try again."
+        : requestError.message === "Failed to fetch"
+        ? "Network error. Please check your connection and try again."
+        : requestError.message || "Could not generate a longer explanation. Please try again.";
+      setExplanationErrors((previous) => ({ ...previous, [questionIndex]: message }));
+    } finally {
+      clearTimeout(timeoutId);
+      setGeneratingExplanationIndex(null);
+    }
+  }
+
   const selectAnswer = (qIdx, aIdx) => {
     if (!isPracticeReady || showResults) return;
     setSelectedAnswers((prev) => ({ ...prev, [qIdx]: aIdx }));
@@ -276,40 +326,24 @@ export default function Practice() {
 
   return (
     <Layout>
-      <div className={`relative isolate min-h-screen py-8 ${questions.length > 0
-        ? "overflow-hidden bg-gradient-to-br from-emerald-50 via-white to-green-50 dark:from-black dark:via-black dark:to-emerald-950/30"
-        : "bg-gray-50 dark:bg-black"}`}>
-        {questions.length > 0 && (
-          <div aria-hidden="true" className="pointer-events-none absolute inset-0 overflow-hidden">
-            <div className="absolute -right-24 top-16 h-80 w-80 rounded-full bg-emerald-300/20 blur-3xl dark:bg-emerald-400/10" />
-            <div className="absolute -left-20 bottom-0 h-64 w-64 rounded-full bg-lime-300/20 blur-3xl dark:bg-lime-400/5" />
-          </div>
-        )}
+      <div className="relative isolate min-h-screen overflow-hidden bg-gradient-to-br from-emerald-50 via-white to-green-50 py-8 dark:from-black dark:via-black dark:to-emerald-950/30">
+        <div aria-hidden="true" className="pointer-events-none absolute inset-0 overflow-hidden">
+          <div className="absolute -right-24 top-16 h-80 w-80 rounded-full bg-emerald-300/20 blur-3xl dark:bg-emerald-400/10" />
+          <div className="absolute -left-20 bottom-0 h-64 w-64 rounded-full bg-lime-300/20 blur-3xl dark:bg-lime-400/5" />
+        </div>
         <div className="relative mx-auto max-w-4xl px-4 sm:px-6 lg:px-8">
           {/* Header */}
           {questions.length === 0 && (
-            <div className="mb-8 text-center">
-              <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-emerald-100 dark:bg-emerald-400/10">
-                <BookOpen className="h-8 w-8 text-emerald-600 dark:text-emerald-400" />
-              </div>
-              <h1 className="mb-2 text-3xl font-bold text-gray-900 dark:text-white">
-                Build your practice set
+            <div className="mb-4">
+              <h1 className="text-2xl font-bold tracking-tight text-gray-950 dark:text-white sm:text-3xl">
+                Build Your Practice Set
               </h1>
-              <p className="text-gray-600 dark:text-white/70">
-                Choose what you want to work on. You can change these choices any time.
-              </p>
             </div>
           )}
 
           {questions.length === 0 ? (
             <div className="space-y-5">
               <section className="rounded-3xl border border-gray-200 bg-white p-5 shadow-sm dark:border-white/15 dark:bg-white/[0.03] sm:p-8">
-                <div className="mb-8">
-                  <p className="text-sm font-semibold uppercase tracking-[0.14em] text-emerald-700 dark:text-emerald-400">Create a focused session</p>
-                  <h2 className="mt-2 text-2xl font-bold text-gray-950 dark:text-white">What are you studying today?</h2>
-                  <p className="mt-2 text-sm text-gray-600 dark:text-white/60">Set up a practice session that works for you.</p>
-                </div>
-
                 <div className="space-y-8">
                   <section>
                     <div className="mb-3 flex items-center gap-3">
@@ -600,10 +634,18 @@ export default function Practice() {
                 /* Results */
                 <div className="space-y-6">
                   <Card className="bg-white dark:bg-black border dark:border-white/20">
-                    <CardHeader>
-                      <CardTitle className="text-center text-gray-900 dark:text-white">
+                    <CardHeader className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                      <CardTitle className="text-center text-gray-900 dark:text-white sm:text-left">
                         Quiz Complete! Your Score: {calculateScore()}%
                       </CardTitle>
+                      <Button
+                        type="button"
+                        onClick={resetQuiz}
+                        className="w-full rounded-full bg-emerald-700 px-5 text-white hover:bg-emerald-800 dark:bg-emerald-400 dark:text-black dark:hover:bg-emerald-300 sm:w-auto"
+                      >
+                        <RotateCcw className="mr-2 h-4 w-4" aria-hidden="true" />
+                        Take Another Practice Set
+                      </Button>
                     </CardHeader>
                   </Card>
 
@@ -653,8 +695,34 @@ export default function Practice() {
                           </div>
 
                          <div className="explanation-box">
-                           <h4 className="font-semibold mb-2">Explanation:</h4>
+                           <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
+                             <h4 className="font-semibold">Explanation:</h4>
+                             {!q.moreExplanation && (
+                               <Button
+                                 type="button"
+                                 variant="outline"
+                                 size="sm"
+                                 onClick={() => generateMoreExplanation(q, qIndex)}
+                                 disabled={generatingExplanationIndex !== null}
+                                 className="h-8 rounded-full border-emerald-700/25 px-3 text-emerald-800 hover:bg-emerald-50 dark:border-emerald-300/25 dark:text-emerald-200 dark:hover:bg-emerald-400/10"
+                               >
+                                 <Lightbulb className="mr-1.5 h-3.5 w-3.5" aria-hidden="true" />
+                                 {generatingExplanationIndex === qIndex ? "Generating…" : "More explanation"}
+                               </Button>
+                             )}
+                           </div>
                             <div>{renderTextWithMath(q.explanation)}</div>
+                            {q.moreExplanation && (
+                              <div className="mt-4 pt-4">
+                                <p className="mb-2 font-semibold">More detail:</p>
+                                <div>{renderTextWithMath(q.moreExplanation)}</div>
+                              </div>
+                            )}
+                            {explanationErrors[qIndex] && (
+                              <p role="alert" className="mt-3 text-sm text-red-700 dark:text-red-300">
+                                {explanationErrors[qIndex]}
+                              </p>
+                            )}
                          </div>
 
                         </CardContent>
@@ -664,10 +732,11 @@ export default function Practice() {
 
                   <div className="flex justify-center">
                     <Button
+                      type="button"
                       onClick={resetQuiz}
-                      className="bg-emerald-600 dark:bg-emerald-400 hover:bg-emerald-700 dark:hover:bg-emerald-500 text-white dark:text-black"
+                      className="rounded-full bg-emerald-700 px-5 text-white hover:bg-emerald-800 dark:bg-emerald-400 dark:text-black dark:hover:bg-emerald-300"
                     >
-                      <RotateCcw className="w-4 h-4 mr-2" />
+                      <RotateCcw className="mr-2 h-4 w-4" aria-hidden="true" />
                       Take Another Practice Set
                     </Button>
                   </div>

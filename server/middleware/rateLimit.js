@@ -8,7 +8,6 @@ function requestKey(req) {
 
 export function createRateLimiter({ windowMs, limit, message }) {
   const clients = new Map();
-
   const cleanup = setInterval(() => {
     const now = Date.now();
     for (const [key, entry] of clients) {
@@ -29,15 +28,11 @@ export function createRateLimiter({ windowMs, limit, message }) {
 
     res.set("RateLimit-Limit", String(limit));
     res.set("RateLimit-Reset", String(secondsUntil(entry.resetAt)));
-
     if (entry.count >= limit) {
       const retryAfterSeconds = secondsUntil(entry.resetAt);
       res.set("RateLimit-Remaining", "0");
       res.set("Retry-After", String(retryAfterSeconds));
-      return res.status(429).json({
-        error: message,
-        retryAfterSeconds,
-      });
+      return res.status(429).json({ error: message, retryAfterSeconds });
     }
 
     entry.count += 1;
@@ -48,7 +43,6 @@ export function createRateLimiter({ windowMs, limit, message }) {
 
 export function createConcurrencyLimiter({ limit, message }) {
   let activeRequests = 0;
-
   return (req, res, next) => {
     if (activeRequests >= limit) {
       return res.status(503).json({ error: message });
@@ -61,7 +55,6 @@ export function createConcurrencyLimiter({ limit, message }) {
       released = true;
       activeRequests = Math.max(0, activeRequests - 1);
     };
-
     res.once("finish", release);
     res.once("close", release);
     next();
