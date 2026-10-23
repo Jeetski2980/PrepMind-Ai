@@ -10,6 +10,8 @@ import {
 } from "lucide-react";
 import Layout from "@/components/Layout.jsx";
 
+const DEMO_LIMIT_MATH = String.raw`\lim_{x \to 2} \frac{x^2 - 4}{x - 2}`;
+
 export default function Index() {
   useEffect(() => {
     const obj = document.getElementById("countryCount");
@@ -119,7 +121,7 @@ export default function Index() {
                     <span>LIMITS</span>
                   </div>
                   <h2 className="text-xl font-semibold leading-7 text-gray-950 dark:text-white sm:text-2xl">
-                    What is <InlineMath math="\\lim_{x \\to 2} \\frac{x^2 - 4}{x - 2}" />?
+                    What is <InlineMath math={DEMO_LIMIT_MATH} />?
                   </h2>
 
                   <div className="mt-6 space-y-3" role="img" aria-label="Static example showing answer B selected">
