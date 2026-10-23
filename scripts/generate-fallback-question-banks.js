@@ -6,7 +6,7 @@ import { buildFallbackBank, getFallbackBankId } from "../client/lib/fallback-que
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const OUTPUT_DIR = path.join(ROOT, "public", "question-bank");
-const BANK_VERSION = 1;
+const BANK_VERSION = 2;
 
 await rm(OUTPUT_DIR, { recursive: true, force: true });
 await mkdir(OUTPUT_DIR, { recursive: true });
@@ -24,11 +24,15 @@ for (const testType of Object.keys(TEST_SUBJECTS)) {
         question.answer === "ABCD"[question.answerIndex] &&
         question.explanation.split(/\s+/).length >= 24
       );
-      if (!Array.isArray(questions) || questions.length < 50 || uniqueQuestionCount < 50 || !validAnswers) {
-        throw new Error(`Question bank is missing or too small: ${testType} / ${subject} / ${topic}`);
+      const hasRequiredMath = subject !== "AP Calculus BC" || (
+        Array.isArray(questions) && questions.every(({ question }) => question.includes("$"))
+      );
+      if (!Array.isArray(questions) || questions.length < 50 || uniqueQuestionCount < 50 || !validAnswers || !hasRequiredMath) {
+        throw new Error(`Question bank is missing, too small, or lacks its required math: ${testType} / ${subject} / ${topic}`);
       }
       const bankId = getFallbackBankId(testType, subject, topic);
-      const payload = { version: BANK_VERSION, testType, subject, topic, questions };
+      const version = subject === "AP Calculus BC" ? BANK_VERSION : 1;
+      const payload = { version, testType, subject, topic, questions };
       await writeFile(path.join(OUTPUT_DIR, `${bankId}.json`), `${JSON.stringify(payload)}\n`, "utf8");
       totalQuestions += questions.length;
       totalConfigurations += 1;

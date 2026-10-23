@@ -1,7 +1,7 @@
 import { readLocalRecord, writeLocalRecord } from "./local-persistence.js";
 import { getTopicDetails, SUPPORTED_FALLBACK_TESTS, TOPIC_CATALOG } from "../data/practice-catalog.js";
 
-const FALLBACK_BANK_VERSION = 1;
+const FALLBACK_BANK_VERSION = 2;
 const BANK_RECORD_PREFIX = `fallback-question-bank-v${FALLBACK_BANK_VERSION}:`;
 const QUESTION_COUNT = 55;
 
@@ -135,10 +135,40 @@ function fractionLatex(numerator, denominator = 1) {
   return bottom === 1 ? String(top) : `\\frac{${top}}{${bottom}}`;
 }
 
+function formatCoefficient(value) {
+  return value === 1 ? "" : String(value);
+}
+
 function shuffledChoices(correct, alternatives, answerIndex) {
   const choices = [...alternatives];
   choices.splice(answerIndex, 0, correct);
   return choices;
+}
+
+function createCalculusBCQuestion({ testType, topic, index, question, correct, distractors, explanation, difficulty }) {
+  const correctChoice = `$${correct}$`;
+  const uniqueDistractors = [...new Set(distractors.filter((choice) => choice !== correct))].slice(0, 3);
+  let fallbackIndex = 1;
+  while (uniqueDistractors.length < 3) {
+    const fallback = `${correct}+${fallbackIndex++}`;
+    if (fallback !== correct && !uniqueDistractors.includes(fallback)) uniqueDistractors.push(fallback);
+  }
+
+  const answerIndex = (index * 3 + 2) % 4;
+  const detailedExplanation = `${explanation} Check your result against the displayed formula, apply the relevant derivative or integration rule carefully, and use the specified parameter value or bounds.`;
+  return {
+    id: `${slugify(`${testType}-ap-calculus-bc-${topic}`)}-${String(index + 1).padStart(2, "0")}`,
+    question,
+    choices: shuffledChoices(correctChoice, uniqueDistractors.map((choice) => `$${choice}$`), answerIndex),
+    answer: ["A", "B", "C", "D"][answerIndex],
+    answerIndex,
+    correctIndex: answerIndex,
+    difficulty,
+    explanation: detailedExplanation,
+    extendedExplanation: `${detailedExplanation} Recompute the derivative, substitution, or integral from the displayed expressions to verify the result.`,
+    topic,
+    source: "fallback",
+  };
 }
 
 function createCalculusBCSeriesBank(testType) {
@@ -212,7 +242,7 @@ function createCalculusBCSeriesBank(testType) {
       const centeredDifference = center < 0 ? `x+${Math.abs(center)}` : `x-${center}`;
       question = String.raw`What is the radius of convergence of $\sum_{n=0}^{\infty} \frac{${centeredTerm}^n}{${radius}^n}$?`;
       correct = `$${radius}$`;
-      alternatives = [`$\\frac{1}{${radius}}$`, `$${2 * radius}$`, "$\\infty$"];
+      alternatives = [`$\\frac{1}{${radius}}$`, `$${2 * radius}$`, "$\infty$"];
       explanation = `This power series is geometric in $(${centeredDifference})/${radius}$. It converges when $|${centeredDifference}|/${radius}<1$, which gives $|${centeredDifference}|<${radius}$. The radius of convergence is $${radius}$. The center determines the interval's location, while this radius gives its distance from the center.`;
       difficulty = "Medium";
     }
@@ -233,13 +263,258 @@ function createCalculusBCSeriesBank(testType) {
   });
 }
 
+function createCalculusBCParametricQuestion(testType, index) {
+  const type = Math.floor(index / 11);
+  const variant = index % 11;
+  let question;
+  let correct;
+  let distractors;
+  let explanation;
+  let difficulty;
+
+  if (type === 0) {
+    const a = variant + 1;
+    const b = (variant % 5) + 1;
+    const c = ((variant + 2) % 4) + 1;
+    correct = fractionLatex(2 * b + c, 2 * a);
+    distractors = [
+      fractionLatex(2 * b + c + 1, 2 * a),
+      fractionLatex(2 * b + c, 2 * a + 2),
+      fractionLatex(2 * b, 2 * a),
+    ];
+    question = String.raw`For $x(t)=${formatCoefficient(a)}t^2+1$ and $y(t)=${formatCoefficient(b)}t^2+${c}t$, find $\frac{dy}{dx}$ at $t=1$.`;
+    explanation = String.raw`Use $\frac{dy}{dx}=\frac{dy/dt}{dx/dt}$. Here $\frac{dx}{dt}=${2 * a}t$ and $\frac{dy}{dt}=${2 * b}t+${c}$, so at $t=1$ the slope is $\frac{${2 * b + c}}{${2 * a}}=${correct}$.`;
+    difficulty = "Medium";
+  } else if (type === 1) {
+    const a = (variant % 5) + 1;
+    const b = variant + 1;
+    correct = fractionLatex(3 * b, 4 * a * a);
+    distractors = [
+      fractionLatex(3 * b + 1, 4 * a * a),
+      fractionLatex(3 * b, 2 * a * a),
+      fractionLatex(3 * b, 4 * a * a + 1),
+    ];
+    question = String.raw`For $x(t)=${formatCoefficient(a)}t^2$ and $y(t)=${formatCoefficient(b)}t^3+${formatCoefficient(variant + 1)}t^2$, find $\frac{d^2y}{dx^2}$ at $t=1$.`;
+    explanation = String.raw`First, $\frac{dy}{dx}=\frac{${3 * b}t^2+${2 * (variant + 1)}t}{${2 * a}t}$. Differentiate this with respect to $t$, then divide by $\frac{dx}{dt}=${2 * a}t$: at $t=1$, $\frac{d^2y}{dx^2}=\frac{${3 * b}}{${4 * a * a}}=${correct}$.`;
+    difficulty = "Hard";
+  } else if (type === 2) {
+    const a = variant + 1;
+    const b = (variant % 5) + 2;
+    const c = variant + 3;
+    const x0 = a + 1;
+    const y0 = b + c;
+    const slope = fractionLatex(2 * b, a);
+    correct = String.raw`y-${y0}=${slope}(x-${x0})`;
+    distractors = [
+      String.raw`y-${y0}=${fractionLatex(2 * b + 1, a)}(x-${x0})`,
+      String.raw`y-${y0}=${fractionLatex(2 * b, a + 1)}(x-${x0})`,
+      String.raw`y-${y0 + 1}=${slope}(x-${x0})`,
+    ];
+    question = String.raw`For $x(t)=${formatCoefficient(a)}t+1$ and $y(t)=${formatCoefficient(b)}t^2+${c}$, which equation is tangent to the curve at $t=1$?`;
+    explanation = String.raw`At $t=1$, the point is $(${x0},${y0})$. The slope is $\frac{dy}{dx}=\frac{${2 * b}t}{${a}}=\frac{${2 * b}}{${a}}=${slope}$, so point-slope form gives $${correct}$.`;
+    difficulty = "Medium";
+  } else if (type === 3) {
+    const a = variant + 1;
+    const b = variant + 2;
+    correct = String(b);
+    distractors = [String(a), String.raw`\sqrt{${a}^2+${b}^2}`, String(b + 1)];
+    question = String.raw`For $x(t)=${formatCoefficient(a)}\cos t$ and $y(t)=${formatCoefficient(b)}\sin t$, what is the speed at $t=0$?`;
+    explanation = String.raw`Speed is $\sqrt{(dx/dt)^2+(dy/dt)^2}$. Since $dx/dt=-${formatCoefficient(a)}\sin t$ and $dy/dt=${formatCoefficient(b)}\cos t$, at $t=0$ the speed is $\sqrt{0^2+${b}^2}=${b}$.`;
+    difficulty = "Easy";
+  } else {
+    const a = variant + 1;
+    const b = (variant % 4) + 1;
+    correct = String.raw`\sqrt{${a}^2+${b}^2}`;
+    distractors = [String(a + b), String.raw`|${a}-${b}|`, String(a * b + 1)];
+    question = String.raw`Find the arc length of $x(t)=${formatCoefficient(a)}t$, $y(t)=${formatCoefficient(b)}t$ for $0\le t\le1$.`;
+    explanation = String.raw`Arc length is $\int_0^1\sqrt{(dx/dt)^2+(dy/dt)^2}\,dt$. The derivatives are constant, so the length is $\int_0^1\sqrt{${a}^2+${b}^2}\,dt=\sqrt{${a}^2+${b}^2}=${correct}$.`;
+    difficulty = "Hard";
+  }
+
+  return createCalculusBCQuestion({
+    testType,
+    topic: "Parametric Equations",
+    index,
+    question,
+    correct,
+    distractors,
+    explanation,
+    difficulty,
+  });
+}
+
+function createCalculusBCPolarQuestion(testType, index) {
+  const type = Math.floor(index / 11);
+  const variant = index % 11;
+  let question;
+  let correct;
+  let distractors;
+  let explanation;
+  let difficulty;
+
+  if (type === 0) {
+    const a = variant + 1;
+    const b = (variant % 5) + 1;
+    correct = fractionLatex(a, b);
+    distractors = [fractionLatex(a + 1, b), fractionLatex(a, b + 1), fractionLatex(-a, b)];
+    question = String.raw`For the polar curve $r=${a}+${formatCoefficient(b)}\sin\theta$, find the slope $\frac{dy}{dx}$ at $\theta=0$.`;
+    explanation = String.raw`For a polar curve, $\frac{dy}{dx}=\frac{r'\sin\theta+r\cos\theta}{r'\cos\theta-r\sin\theta}$. Here $r=${a}+${formatCoefficient(b)}\sin\theta$ and $r'=${formatCoefficient(b)}\cos\theta$. At $\theta=0$, the numerator is $${a}$ and the denominator is $${b}$, so the slope is $\frac{${a}}{${b}}=${correct}$.`;
+    difficulty = "Hard";
+  } else if (type === 1) {
+    const a = variant + 1;
+    correct = String.raw`\frac{\pi(${a})^2}{8}`;
+    distractors = [String.raw`\frac{\pi(${a})^2}{4}`, String.raw`\frac{\pi(${a})^2}{16}`, String.raw`\frac{(${a})^2}{2}`];
+    question = String.raw`Find the area swept by $r=${formatCoefficient(a)}\sin\theta$ from $\theta=0$ to $\theta=\frac{\pi}{2}$.`;
+    explanation = String.raw`Polar area is $A=\frac12\int_{0}^{\pi/2}r^2\,d\theta=\frac{${a}^2}{2}\int_0^{\pi/2}\sin^2\theta\,d\theta$. Since this sine-squared integral is $\frac{\pi}{4}$, the area is $\frac{\pi(${a})^2}{8}=${correct}$.`;
+    difficulty = "Medium";
+  } else if (type === 2) {
+    const a = variant + 1;
+    const b = (variant % 5) + 2;
+    correct = String.raw`\frac{${b}-${formatCoefficient(a)}\sqrt{3}}{2}`;
+    distractors = [
+      String.raw`\frac{${b + 1}-${formatCoefficient(a)}\sqrt{3}}{2}`,
+      String.raw`\frac{${b}+${formatCoefficient(a)}\sqrt{3}}{2}`,
+      String.raw`\frac{${b}\sqrt{3}-${a}}{2}`,
+    ];
+    question = String.raw`If $r=${formatCoefficient(a)}\cos\theta+${formatCoefficient(b)}\sin\theta$, find $\frac{dr}{d\theta}$ at $\theta=\frac{\pi}{3}$.`;
+    explanation = String.raw`Differentiate to get $\frac{dr}{d\theta}=-${formatCoefficient(a)}\sin\theta+${formatCoefficient(b)}\cos\theta$. At $\theta=\frac{\pi}{3}$, this is $-${formatCoefficient(a)}\frac{\sqrt3}{2}+${b}\frac{1}{2}=\frac{${b}-${a}\sqrt3}{2}=${correct}$.`;
+    difficulty = "Medium";
+  } else if (type === 3) {
+    const a = variant + 1;
+    const b = (variant % 4) + 1;
+    correct = String.raw`-\frac{${a}+${b}\sqrt{2}}{${a}}`;
+    distractors = [
+      String.raw`-\frac{${a}+${b}\sqrt{2}}{${a + 1}}`,
+      String.raw`-1+\frac{${b}\sqrt{2}}{${a}}`,
+      String.raw`\frac{${a}+${b}\sqrt{2}}{${a}}`,
+    ];
+    question = String.raw`For $r=${a}+${formatCoefficient(b)}\sin\theta$, find the slope $\frac{dy}{dx}$ at $\theta=\frac{\pi}{4}$.`;
+    explanation = String.raw`Use the polar slope formula $\frac{dy}{dx}=\frac{r'\sin\theta+r\cos\theta}{r'\cos\theta-r\sin\theta}$. Substituting $r=${a}+${formatCoefficient(b)}\sin\theta$, $r'=${formatCoefficient(b)}\cos\theta$, and $\theta=\frac{\pi}{4}$ gives $-1-\frac{${b}\sqrt2}{${a}}=${correct}$.`;
+    difficulty = "Hard";
+  } else {
+    const radius = variant + 2;
+    correct = String.raw`\left(\frac{${radius}\sqrt{3}}{2},\frac{${radius}}{2}\right)`;
+    distractors = [
+      String.raw`\left(\frac{${radius}}{2},\frac{${radius}\sqrt{3}}{2}\right)`,
+      String.raw`\left(-\frac{${radius}\sqrt{3}}{2},\frac{${radius}}{2}\right)`,
+      String.raw`\left(\frac{${radius}\sqrt{3}}{2},-\frac{${radius}}{2}\right)`,
+    ];
+    question = String.raw`Convert the polar point $(r,\theta)=(${radius},\frac{\pi}{6})$ to Cartesian coordinates $(x,y)$.`;
+    explanation = String.raw`Use $x=r\cos\theta$ and $y=r\sin\theta$. With $r=${radius}$ and $\theta=\frac{\pi}{6}$, $x=\frac{${radius}\sqrt3}{2}$ and $y=\frac{${radius}}{2}$, giving $${correct}$.`;
+    difficulty = "Easy";
+  }
+
+  return createCalculusBCQuestion({
+    testType,
+    topic: "Polar Coordinates",
+    index,
+    question,
+    correct,
+    distractors,
+    explanation,
+    difficulty,
+  });
+}
+
+function createCalculusBCIntegrationQuestion(testType, index) {
+  const type = Math.floor(index / 11);
+  const variant = index % 11;
+  let question;
+  let correct;
+  let distractors;
+  let explanation;
+  let difficulty;
+
+  if (type === 0) {
+    const n = variant + 1;
+    const m = (variant % 3) + 1;
+    const numerator = (m + 1) ** (n + 1) - m ** (n + 1);
+    correct = fractionLatex(numerator, n + 1);
+    distractors = [
+      fractionLatex((m + 1) ** (n + 1) + m ** (n + 1), n + 1),
+      fractionLatex(numerator, n),
+      fractionLatex(numerator + 1, n + 1),
+    ];
+    question = String.raw`Evaluate using substitution: $\int_0^1 2x(x^2+${m})^{${n}}\,dx$.`;
+    explanation = String.raw`Let $u=x^2+${m}$, so $du=2x\,dx$. The bounds become $u=${m}$ and $u=${m + 1}$, so the integral is $\int_{${m}}^{${m + 1}}u^{${n}}\,du=\left[\frac{u^{${n + 1}}}{${n + 1}}\right]_{${m}}^{${m + 1}}=${correct}$.`;
+    difficulty = "Medium";
+  } else if (type === 1) {
+    const a = variant + 1;
+    correct = a === 1 ? "1" : String.raw`\frac{e^{${a}}(${a}-1)+1}{${a}^2}`;
+    distractors = [
+      String.raw`\frac{e^{${a}}(${a}-1)}{${a}^2}`,
+      String.raw`\frac{e^{${a}}(${a}+1)+1}{${a}^2}`,
+      String.raw`\frac{e^{${a}}}{${a}}`,
+    ];
+    question = String.raw`Evaluate by integration by parts: $\int_0^1 xe^{${formatCoefficient(a)}x}\,dx$.`;
+    explanation = String.raw`Choose $u=x$ and $dv=e^{${formatCoefficient(a)}x}\,dx$, so $du=dx$ and $v=\frac{e^{${formatCoefficient(a)}x}}{${a}}$. Then $\int_0^1 xe^{${formatCoefficient(a)}x}\,dx=\left[\frac{xe^{${formatCoefficient(a)}x}}{${a}}\right]_0^1-\int_0^1\frac{e^{${formatCoefficient(a)}x}}{${a}}\,dx=\frac{e^{${a}}(${a}-1)+1}{${a}^2}=${correct}$.`;
+    difficulty = "Hard";
+  } else if (type === 2) {
+    const a = variant + 1;
+    const logArgument = fractionLatex((a + 1) ** 2, a * (a + 2));
+    correct = String.raw`\ln\left(${logArgument}\right)`;
+    distractors = [
+      String.raw`\ln\left(\frac{${a}+1}{${a}}\right)`,
+      String.raw`\ln\left(\frac{${a}+2}{${a}+1}\right)`,
+      String.raw`\ln\left(\frac{${a}+1}{${a}+2}\right)`,
+    ];
+    question = String.raw`Evaluate using partial fractions: $\int_0^1\frac{1}{(x+${a})(x+${a + 1})}\,dx$.`;
+    explanation = String.raw`Decompose $\frac{1}{(x+${a})(x+${a + 1})}=\frac{1}{x+${a}}-\frac{1}{x+${a + 1}}$. Integrating from 0 to 1 gives $\ln\left(\frac{${a}+1}{${a}}\right)-\ln\left(\frac{${a + 2}}{${a + 1}}\right)=\ln\left(\frac{(${a}+1)^2}{${a}(${a}+2)}\right)=${correct}$.`;
+    difficulty = "Hard";
+  } else if (type === 3) {
+    const p = variant + 2;
+    correct = fractionLatex(1, p - 1);
+    distractors = [fractionLatex(1, p), fractionLatex(1, p + 1), String.raw`\infty`];
+    question = String.raw`For $p=${p}$, evaluate the improper integral $\int_1^{\infty}\frac{1}{x^p}\,dx$.`;
+    explanation = String.raw`Since $p=${p}>1$, the integral converges. Its antiderivative is $\frac{x^{1-p}}{1-p}$, and the limit at infinity is 0; therefore the value is $\frac{1}{p-1}=\frac{1}{${p - 1}}=${correct}$.`;
+    difficulty = "Medium";
+  } else {
+    const a = variant + 1;
+    correct = String.raw`\frac{\pi(${a})^2}{4}`;
+    distractors = [
+      String.raw`\frac{\pi(${a})^2}{2}`,
+      String.raw`\frac{\pi(${a})^2}{8}`,
+      String.raw`\frac{(${a})^2}{2}`,
+    ];
+    question = String.raw`Evaluate $\int_0^{${a}}\sqrt{${a}^2-x^2}\,dx$ using a trigonometric substitution.`;
+    explanation = String.raw`Let $x=${formatCoefficient(a)}\sin\theta$. The bounds become $0$ and $\frac{\pi}{2}$, and the integral becomes $${a}^2\int_0^{\pi/2}\cos^2\theta\,d\theta=\frac{\pi(${a})^2}{4}=${correct}$. This is also the area of a quarter circle of radius $${a}$.`;
+    difficulty = "Hard";
+  }
+
+  return createCalculusBCQuestion({
+    testType,
+    topic: "Advanced Integration",
+    index,
+    question,
+    correct,
+    distractors,
+    explanation,
+    difficulty,
+  });
+}
+
+function createCalculusBCTopicBank(testType, topic) {
+  if (topic === "Series") return createCalculusBCSeriesBank(testType);
+  const createQuestion = topic === "Parametric Equations"
+    ? createCalculusBCParametricQuestion
+    : topic === "Polar Coordinates"
+      ? createCalculusBCPolarQuestion
+      : topic === "Advanced Integration"
+        ? createCalculusBCIntegrationQuestion
+        : null;
+  return createQuestion
+    ? Array.from({ length: QUESTION_COUNT }, (_unused, index) => createQuestion(testType, index))
+    : null;
+}
+
 function createTopicBank({ testType, subject, topic }) {
   const topicDetails = getTopicDetails(subject, topic);
   const courseTopics = TOPIC_CATALOG[subject] || [];
   if (!topicDetails || !courseTopics.length) return null;
 
-  if (testType === "AP Exams" && subject === "AP Calculus BC" && topic === "Series") {
-    return createCalculusBCSeriesBank(testType);
+  if (testType === "AP Exams" && subject === "AP Calculus BC") {
+    const calculusBank = createCalculusBCTopicBank(testType, topic);
+    if (calculusBank) return calculusBank;
   }
 
   return Array.from({ length: QUESTION_COUNT }, (_unused, index) => {
@@ -371,7 +646,7 @@ export async function getFallbackQuestions({ testType, subject, topic, count }) 
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 5000);
     try {
-      const response = await fetch(`${basePath}question-bank/${bankId}.json`, {
+      const response = await fetch(`${basePath}question-bank/${bankId}.json?v=${FALLBACK_BANK_VERSION}`, {
         cache: "force-cache",
         signal: controller.signal,
       });
