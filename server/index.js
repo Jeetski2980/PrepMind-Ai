@@ -47,12 +47,12 @@ app.use("/api", (_req, res, next) => {
   next();
 });
 
-const chatBurstLimit = createRateLimiter({ windowMs: 60 * 1000, limit: 15, message: "Too many tutor messages. Please wait a minute and try again." });
-const chatDailyLimit = createRateLimiter({ windowMs: 24 * 60 * 60 * 1000, limit: 50, message: "You reached today's tutor limit. Please try again tomorrow." });
-const questionBurstLimit = createRateLimiter({ windowMs: 10 * 60 * 1000, limit: 5, message: "Too many question sets. Please wait a few minutes and try again." });
-const questionDailyLimit = createRateLimiter({ windowMs: 24 * 60 * 60 * 1000, limit: 15, message: "You reached today's question-generation limit. Please try again tomorrow." });
-const explanationBurstLimit = createRateLimiter({ windowMs: 10 * 60 * 1000, limit: 20, message: "Too many explanation requests. Please wait a few minutes and try again." });
-const explanationDailyLimit = createRateLimiter({ windowMs: 24 * 60 * 60 * 1000, limit: 25, message: "You reached today's more-explanation limit. Please try again tomorrow." });
+const chatBurstLimit = createRateLimiter({ windowMs: 60 * 1000, limit: 17, message: "Too many tutor messages. Please wait a minute and try again." });
+const chatDailyLimit = createRateLimiter({ windowMs: 24 * 60 * 60 * 1000, limit: 55, message: "You reached today's tutor limit. Please try again tomorrow." });
+const questionBurstLimit = createRateLimiter({ windowMs: 10 * 60 * 1000, limit: 6, message: "Too many question sets. Please wait a few minutes and try again." });
+const questionDailyLimit = createRateLimiter({ windowMs: 24 * 60 * 60 * 1000, limit: 17, message: "You reached today's question-generation limit. Please try again tomorrow." });
+const explanationBurstLimit = createRateLimiter({ windowMs: 10 * 60 * 1000, limit: 22, message: "Too many explanation requests. Please wait a few minutes and try again." });
+const explanationDailyLimit = createRateLimiter({ windowMs: 24 * 60 * 60 * 1000, limit: 28, message: "You reached today's more-explanation limit. Please try again tomorrow." });
 const apiConcurrencyLimit = createConcurrencyLimiter({ limit: 4, message: "PrepMind is busy right now. Please try again shortly." });
 
 function httpError(status, message) {
@@ -170,7 +170,7 @@ function validText(value, maxLength) {
   return typeof value === "string" && value.trim().length > 0 && value.trim().length <= maxLength;
 }
 
-const TUTOR_SYSTEM = "You are a helpful SAT, ACT, and AP tutor. Explain clearly and use readable Markdown headings, lists, tables, or code when useful. Write inline math inside $...$ and standalone math inside $$...$$ using valid LaTeX. Keep answers focused, and finish every response at a complete sentence and equation.";
+const TUTOR_SYSTEM = `You are PrepMind's academic tutor for SAT, ACT, and AP exam preparation. Stay within academic learning and test preparation, including the math, science, reading, writing, history, and study skills covered by those exams. If the user asks about an unrelated topic, such as sports rankings or entertainment, do not answer the unrelated question. Briefly explain that you focus on SAT, ACT, and AP preparation, then invite them to ask an academic or test-prep question. If a request is unclear, ask how it relates to their studies before answering. Explain clearly and use readable Markdown headings, lists, tables, or code when useful. Write inline math inside $...$ and standalone math inside $$...$$ using valid LaTeX. Keep answers focused, and finish every response at a complete sentence and equation.`;
 
 app.post("/api/chat", chatBurstLimit, chatDailyLimit, apiConcurrencyLimit, async (req, res) => {
   try {
