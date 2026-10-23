@@ -1,13 +1,63 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { BookOpen, CheckCircle, XCircle, Lightbulb, RotateCcw } from "lucide-react";
 import Layout from "@/components/Layout.jsx";
-import ApiKeyNoticeGoogle from "@/components/ApiKeyNoticeGoogle";
-import { InlineMath, BlockMath } from "react-katex";
-import "katex/dist/katex.min.css";
+import { renderTextWithMath } from "@/lib/math-rendering.jsx";
+import { deleteLocalRecord, readLocalRecord, writeLocalRecord } from "@/lib/local-persistence.js";
+
+const PRACTICE_SESSION_KEY = "active-practice-session";
+
+function calculatePracticeScore(questions, selectedAnswers) {
+  if (!questions.length) return 0;
+  let correct = 0;
+  questions.forEach((question, index) => {
+    const correctIndex = Number.isInteger(question.answerIndex)
+      ? question.answerIndex
+      : ({ A: 0, B: 1, C: 2, D: 3 }[question.answer?.toUpperCase()] ?? 0);
+    if (selectedAnswers[index] === correctIndex) correct += 1;
+  });
+  return Math.round((correct / questions.length) * 100);
+}
+
+function restorePracticeSession(value) {
+  if (!value || !Array.isArray(value.questions) || value.questions.length === 0) return null;
+  const validQuestions = value.questions.every((question) =>
+    question && typeof question.question === "string" &&
+    Array.isArray(question.choices) && question.choices.length === 4 &&
+    question.choices.every((choice) => typeof choice === "string")
+  );
+  if (!validQuestions) return null;
+
+  const questions = value.questions;
+  const selectedAnswers = Object.fromEntries(
+    Object.entries(value.selectedAnswers && typeof value.selectedAnswers === "object" ? value.selectedAnswers : {})
+      .filter(([questionIndex, answerIndex]) => {
+        const qIndex = Number(questionIndex);
+        return Number.isInteger(qIndex) && qIndex >= 0 && qIndex < questions.length &&
+          Number.isInteger(answerIndex) && answerIndex >= 0 && answerIndex < questions[qIndex].choices.length;
+      })
+  );
+  const isComplete = questions.every((_question, index) => Number.isInteger(selectedAnswers[index]));
+  const showResults = Boolean(value.showResults) && isComplete;
+  const calculatedScore = calculatePracticeScore(questions, selectedAnswers);
+
+  return {
+    testType: typeof value.testType === "string" ? value.testType : "",
+    subject: typeof value.subject === "string" ? value.subject : "",
+    topic: typeof value.topic === "string" ? value.topic : "",
+    numQuestions: ["5", "10", "15"].includes(String(value.numQuestions)) ? String(value.numQuestions) : String(questions.length),
+    questions,
+    currentQuestion: Number.isInteger(value.currentQuestion)
+      ? Math.max(0, Math.min(questions.length - 1, value.currentQuestion))
+      : 0,
+    selectedAnswers,
+    showResults,
+    score: showResults && Number.isFinite(value.score) ? value.score : showResults ? calculatedScore : null,
+  };
+}
 
 // defines all exams and their subjects for dropdown selection
 
@@ -59,55 +109,6 @@ const TOPIC_OPTIONS = {
   "AP Computer Science A": ["Object-Oriented Programming", "Data Structures", "Algorithms", "Program Design"],
 };
 
-/* ---------- Math rendering ---------- */
-// converts text into JSX with proper math rendering (KaTeX) and bold formatting
-const renderTextWithMath = (text) => {
-  if (text == null) return null;
-  let s = String(text);
-
-  // converts \( \) and \[ \] into $ and $$ format for KaTeX
-  s = s
-    .replace(/\\\(([\s\S]+?)\\\)/g, (_m, p1) => `$${p1}$`)
-    .replace(/\\\[([\s\S]+?)\\\]/g, (_m, p1) => `$$${p1}$$`);
-
-  if (!s.includes("$")) {
-    if (/^\s*\\[A-Za-z]/.test(s.trim())) {
-      s = `$${s}$`;
-    } else {
-      const CHUNK =
-        /(\\frac\{[^{}]+\}\{[^{}]+\}|\\sqrt\{[^{}]+\}|\\hat\{[^{}]+\}|\\bar\{[^{}]+\}|\\vec\{[^{}]+\}|\\int[^ \n]*|\\sum[^ \n]*|\\lim[^ \n]*|\\log(?:_[^{\s]+|\([^)]*\))?|\\sin|\\cos|\\tan|\\pi|\\theta|\\alpha|\\beta|\\gamma|\\delta|\\lambda|\\mu|\\sigma|\\leq|\\geq|\\neq|\\ne)/g;
-      s = s.replace(CHUNK, (m) => `$${m}$`);
-    }
-  }
-
-  if (s.split("$").length % 2 === 0) {
-    s = s.replace(/\$/g, "");
-  }
-
-  const parts = s.split(/(\$\$[\s\S]+?\$\$|\$[\s\S]+?\$)/g);
-
-  return parts.map((part, i) => {
-    if (part.startsWith("$$") && part.endsWith("$$")) {
-      const math = part.slice(2, -2);
-      try { return <BlockMath key={i} math={math} />; }
-      catch { return <span key={i}>{part}</span>; }
-    }
-    if (part.startsWith("$") && part.endsWith("$")) {
-      const math = part.slice(1, -1);
-      try { return <InlineMath key={i} math={math} />; }
-      catch { return <span key={i}>{part}</span>; }
-    }
-    return (
-      <span
-        key={i}
-        dangerouslySetInnerHTML={{
-          __html: part.replace(/\*\*(.*?)\*\*/g, "<strong>$1</strong>"),
-        }}
-      />
-    );
-  });
-};
-
 /* ---------- Page ---------- */
 
 export default function Practice() {
@@ -120,8 +121,53 @@ export default function Practice() {
   const [currentQuestion, setCurrentQuestion] = useState(0);
   const [selectedAnswers, setSelectedAnswers] = useState({});
   const [showResults, setShowResults] = useState(false);
+  const [score, setScore] = useState(null);
+  const [isPracticeReady, setIsPracticeReady] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
   const [error, setError] = useState("");
+
+  useEffect(() => {
+    let isActive = true;
+    readLocalRecord(PRACTICE_SESSION_KEY).then((savedSession) => {
+      if (!isActive) return;
+      const restored = restorePracticeSession(savedSession);
+      if (!restored) return;
+      setTestType(restored.testType);
+      setSubject(restored.subject);
+      setTopic(restored.topic);
+      setNumQuestions(restored.numQuestions);
+      setQuestions(restored.questions);
+      setCurrentQuestion(restored.currentQuestion);
+      setSelectedAnswers(restored.selectedAnswers);
+      setShowResults(restored.showResults);
+      setScore(restored.score);
+    }).finally(() => {
+      if (isActive) setIsPracticeReady(true);
+    });
+    return () => {
+      isActive = false;
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!isPracticeReady) return;
+    if (questions.length === 0) {
+      void deleteLocalRecord(PRACTICE_SESSION_KEY);
+      return;
+    }
+    void writeLocalRecord(PRACTICE_SESSION_KEY, {
+      version: 1,
+      testType,
+      subject,
+      topic,
+      numQuestions,
+      questions,
+      currentQuestion,
+      selectedAnswers,
+      showResults,
+      score: showResults ? (score ?? calculatePracticeScore(questions, selectedAnswers)) : null,
+    });
+  }, [isPracticeReady, testType, subject, topic, numQuestions, questions, currentQuestion, selectedAnswers, showResults, score]);
 
   const availableSubjects = testType ? TEST_SUBJECTS[testType] || [] : [];
   const availableTopics = subject ? TOPIC_OPTIONS[subject] || [] : [];
@@ -134,7 +180,7 @@ export default function Practice() {
   };
 
   async function generateQuestions() {
-    if (!testType || !subject) return;
+    if (!isPracticeReady || !testType || !subject) return;
     setIsGenerating(true);
     setError("");
 
@@ -190,6 +236,7 @@ export default function Practice() {
       setCurrentQuestion(0);
       setSelectedAnswers({});
       setShowResults(false);
+      setScore(null);
     } catch (e) {
       if (e.name === "AbortError") {
         setError("AI is taking a while. Try again or reduce the number of questions.");
@@ -205,240 +252,325 @@ export default function Practice() {
   }
 
   const selectAnswer = (qIdx, aIdx) => {
-    if (showResults) return;
+    if (!isPracticeReady || showResults) return;
     setSelectedAnswers((prev) => ({ ...prev, [qIdx]: aIdx }));
+    setScore(null);
   };
 
-  const submitAnswers = () => setShowResults(true);
+  const submitAnswers = () => {
+    if (!isPracticeReady) return;
+    setScore(calculatePracticeScore(questions, selectedAnswers));
+    setShowResults(true);
+  };
 
   const resetQuiz = () => {
     setQuestions([]);
     setCurrentQuestion(0);
     setSelectedAnswers({});
     setShowResults(false);
+    setScore(null);
     setError("");
   };
 
-  const calculateScore = () => {
-    if (!questions.length) return 0;
-    let correct = 0;
-    questions.forEach((q, i) => {
-      const selected = selectedAnswers[i];
-      const correctIdx = Number.isInteger(q.answerIndex)
-        ? q.answerIndex
-        : ({ A: 0, B: 1, C: 2, D: 3 }[q.answer?.toUpperCase()] ?? 0);
-      if (selected === correctIdx) correct += 1;
-    });
-    return Math.round((correct / questions.length) * 100);
-  };
+  const calculateScore = () => score ?? calculatePracticeScore(questions, selectedAnswers);
 
   return (
     <Layout>
-      <div className="min-h-screen bg-gray-50 dark:bg-black py-8">
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
-          {/* Header */}
-          <div className="text-center mb-8">
-            <div className="w-16 h-16 bg-emerald-100 dark:bg-emerald-400/10 rounded-full flex items-center justify-center mx-auto mb-4">
-              <BookOpen className="w-8 h-8 text-emerald-600 dark:text-emerald-400" />
-            </div>
-            <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
-              AI Practice Questions
-            </h1>
-            <p className="text-gray-600 dark:text-white/70">
-              Get personalized practice questions generated by AI for your specific test and subject
-            </p>
+      <div className={`relative isolate min-h-screen py-8 ${questions.length > 0
+        ? "overflow-hidden bg-gradient-to-br from-emerald-50 via-white to-green-50 dark:from-black dark:via-black dark:to-emerald-950/30"
+        : "bg-gray-50 dark:bg-black"}`}>
+        {questions.length > 0 && (
+          <div aria-hidden="true" className="pointer-events-none absolute inset-0 overflow-hidden">
+            <div className="absolute -right-24 top-16 h-80 w-80 rounded-full bg-emerald-300/20 blur-3xl dark:bg-emerald-400/10" />
+            <div className="absolute -left-20 bottom-0 h-64 w-64 rounded-full bg-lime-300/20 blur-3xl dark:bg-lime-400/5" />
           </div>
+        )}
+        <div className="relative mx-auto max-w-4xl px-4 sm:px-6 lg:px-8">
+          {/* Header */}
+          {questions.length === 0 && (
+            <div className="mb-8 text-center">
+              <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-emerald-100 dark:bg-emerald-400/10">
+                <BookOpen className="h-8 w-8 text-emerald-600 dark:text-emerald-400" />
+              </div>
+              <h1 className="mb-2 text-3xl font-bold text-gray-900 dark:text-white">
+                Build your practice set
+              </h1>
+              <p className="text-gray-600 dark:text-white/70">
+                Choose what you want to work on. You can change these choices any time.
+              </p>
+            </div>
+          )}
 
           {questions.length === 0 ? (
-            <div>
-              <ApiKeyNoticeGoogle />
+            <div className="space-y-5">
+              <section className="rounded-3xl border border-gray-200 bg-white p-5 shadow-sm dark:border-white/15 dark:bg-white/[0.03] sm:p-8">
+                <div className="mb-8">
+                  <p className="text-sm font-semibold uppercase tracking-[0.14em] text-emerald-700 dark:text-emerald-400">Create a focused session</p>
+                  <h2 className="mt-2 text-2xl font-bold text-gray-950 dark:text-white">What are you studying today?</h2>
+                  <p className="mt-2 text-sm text-gray-600 dark:text-white/60">Set up a practice session that works for you.</p>
+                </div>
 
-              <Card className="bg-white dark:bg-black border dark:border-white/20">
-                <CardHeader>
-                  <CardTitle className="text-gray-900 dark:text-white">Choose Your Test</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-6">
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    {/* Test Type */}
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 dark:text-white mb-2">
-                        Test Type
-                      </label>
-                      <Select value={testType} onValueChange={setTestType}>
-                        <SelectTrigger className="dark:bg:black dark:border-white/50 dark:text-white">
-                          <SelectValue placeholder="Select test type" />
-                        </SelectTrigger>
-                        <SelectContent className="dark:bg-black dark:border-white/50">
-                          <SelectItem value="SAT">SAT</SelectItem>
-                          <SelectItem value="ACT">ACT</SelectItem>
-                          <SelectItem value="AP Exams">AP Exams</SelectItem>
-                        </SelectContent>
-                      </Select>
+                <div className="space-y-8">
+                  <section>
+                    <div className="mb-3 flex items-center gap-3">
+                      <span className="flex h-8 w-8 items-center justify-center rounded-full bg-emerald-100 text-sm font-bold text-emerald-800 dark:bg-emerald-400/15 dark:text-emerald-300">1</span>
+                      <h3 className="font-semibold text-gray-900 dark:text-white">Choose an exam</h3>
                     </div>
+                    <div className="grid gap-3 sm:grid-cols-3">
+                      {["SAT", "ACT", "AP Exams"].map((exam) => {
+                        const isSelected = testType === exam;
+                        const subtitle = exam === "SAT" ? "College admission" : exam === "ACT" ? "College admission" : "Advanced Placement";
+                        return (
+                          <button
+                            key={exam}
+                            type="button"
+                            aria-pressed={isSelected}
+                            onClick={() => {
+                              setTestType(exam);
+                              setSubject("");
+                              setTopic("");
+                            }}
+                            className={isSelected
+                              ? "rounded-2xl border-2 border-emerald-600 bg-emerald-50 p-4 text-left shadow-sm dark:border-emerald-400 dark:bg-emerald-400/10"
+                              : "rounded-2xl border border-gray-200 bg-white p-4 text-left transition hover:border-emerald-500 hover:bg-emerald-50/60 dark:border-white/15 dark:bg-white/[0.02] dark:hover:border-emerald-400 dark:hover:bg-emerald-400/5"}
+                          >
+                            <span className="block font-semibold text-gray-950 dark:text-white">{exam}</span>
+                            <span className="mt-1 block text-sm text-gray-500 dark:text-white/55">{subtitle}</span>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </section>
 
-                    {/* Subject */}
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 dark:text:white mb-2">
-                        Subject
-                      </label>
-                      <Select value={subject} onValueChange={setSubject} disabled={!testType}>
-                        <SelectTrigger className="dark:bg-black dark:border-white/50 dark:text-white">
-                          <SelectValue placeholder="Select subject" />
+                  <div className="grid gap-7 md:grid-cols-2">
+                    <section>
+                      <div className="mb-3 flex items-center gap-3">
+                        <span className="flex h-8 w-8 items-center justify-center rounded-full bg-emerald-100 text-sm font-bold text-emerald-800 dark:bg-emerald-400/15 dark:text-emerald-300">2</span>
+                        <h3 className="font-semibold text-gray-900 dark:text-white">Choose a subject</h3>
+                      </div>
+                      <Select
+                        value={subject}
+                        onValueChange={(value) => {
+                          setSubject(value);
+                          setTopic("");
+                        }}
+                        disabled={!testType}
+                      >
+                        <SelectTrigger className="h-12 rounded-xl border-gray-200 bg-white dark:border-white/20 dark:bg-black dark:text-white">
+                          <SelectValue placeholder={testType ? "Select a subject" : "Choose an exam first"} />
                         </SelectTrigger>
-                        <SelectContent className="dark:bg-black dark:border-white/50">
+                        <SelectContent className="max-h-80 dark:border-white/20 dark:bg-[#101510]">
                           {availableSubjects.map((subj) => (
-                            <SelectItem key={subj} value={subj}>
-                              {subj}
-                            </SelectItem>
+                            <SelectItem key={subj} value={subj}>{subj}</SelectItem>
                           ))}
                         </SelectContent>
                       </Select>
-                    </div>
+                    </section>
 
-                    {/* Number of Questions (max 15) */}
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 dark:text-white mb-2">
-                        Number of Questions
-                      </label>
-                      <Select value={numQuestions} onValueChange={setNumQuestions}>
-                        <SelectTrigger className="dark:bg-black dark:border-white/50 dark:text-white">
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent className="dark:bg-black dark:border-white/50">
-                          <SelectItem value="5">5 Questions</SelectItem>
-                          <SelectItem value="10">10 Questions</SelectItem>
-                          <SelectItem value="15">15 Questions</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                  </div>
-
-                  {/* Topic Selection */}
-                  {availableTopics.length > 0 && (
-                    <div>
-                      <div className="flex items-center justify-between mb-2">
-                        <label className="block text-sm font-medium text-gray-700 dark:text-white">
-                          Specific Topic (Optional)
-                        </label>
+                    <section>
+                      <div className="mb-3 flex items-center justify-between gap-3">
+                        <div className="flex items-center gap-3">
+                          <span className="flex h-8 w-8 items-center justify-center rounded-full bg-emerald-100 text-sm font-bold text-emerald-800 dark:bg-emerald-400/15 dark:text-emerald-300">3</span>
+                          <h3 className="font-semibold text-gray-900 dark:text-white">Choose a topic</h3>
+                          <span className="text-xs text-gray-500 dark:text-white/50">Optional</span>
+                        </div>
                         <Button
-                          variant="outline"
+                          type="button"
+                          variant="ghost"
                           size="sm"
                           onClick={suggestTopics}
-                          className="dark:bg-black dark:text-white dark:hover:text-emerald-400 dark:border-white/50 dark:hover:border-emerald-400"
+                          disabled={availableTopics.length === 0}
+                          className="px-2 text-emerald-800 hover:bg-emerald-50 hover:text-emerald-900 dark:text-emerald-300 dark:hover:bg-emerald-400/10"
                         >
-                          <Lightbulb className="w-4 h-4 mr-1" />
-                          Suggest Topics
+                          <Lightbulb className="mr-1 h-4 w-4" aria-hidden="true" />
+                          Surprise me
                         </Button>
                       </div>
-                      <div className="flex flex-wrap gap-2">
-                        {availableTopics.map((topicOption) => (
-                          <Badge
-                            key={topicOption}
-                            variant={topic === topicOption ? "default" : "outline"}
-                            className={`cursor-pointer transition-colors ${
-                              topic === topicOption
-                                ? "bg-emerald-600 dark:bg-emerald-400 text-white dark:text-black"
-                                : "hover:bg-emerald-50 dark:hover:bg-emerald-400/10 dark:text-white dark:border-white/50"
-                            }`}
-                            onClick={() => setTopic(topic === topicOption ? "" : topicOption)}
+                      {availableTopics.length > 0 ? (
+                        <div className="flex flex-wrap gap-2">
+                          {availableTopics.map((topicOption) => {
+                            const isSelected = topic === topicOption;
+                            return (
+                              <button
+                                key={topicOption}
+                                type="button"
+                                aria-pressed={isSelected}
+                                onClick={() => setTopic(isSelected ? "" : topicOption)}
+                                className={isSelected
+                                  ? "rounded-full border border-emerald-700 bg-emerald-700 px-3.5 py-2 text-sm font-medium text-white dark:border-emerald-400 dark:bg-emerald-400 dark:text-black"
+                                  : "rounded-full border border-gray-200 bg-white px-3.5 py-2 text-sm text-gray-700 transition hover:border-emerald-500 hover:text-emerald-800 dark:border-white/15 dark:bg-white/[0.02] dark:text-white/75 dark:hover:border-emerald-400"}
+                              >
+                                {topicOption}
+                              </button>
+                            );
+                          })}
+                        </div>
+                      ) : (
+                        <p className="rounded-xl border border-dashed border-gray-300 px-4 py-3 text-sm text-gray-500 dark:border-white/20 dark:text-white/50">
+                          Choose a subject to see topic options.
+                        </p>
+                      )}
+                    </section>
+                  </div>
+
+                  <section>
+                    <div className="mb-3 flex items-center gap-3">
+                      <span className="flex h-8 w-8 items-center justify-center rounded-full bg-emerald-100 text-sm font-bold text-emerald-800 dark:bg-emerald-400/15 dark:text-emerald-300">4</span>
+                      <h3 className="font-semibold text-gray-900 dark:text-white">Set length</h3>
+                    </div>
+                    <div className="grid grid-cols-3 gap-3">
+                      {["5", "10", "15"].map((length) => {
+                        const isSelected = numQuestions === length;
+                        return (
+                          <button
+                            key={length}
+                            type="button"
+                            aria-pressed={isSelected}
+                            onClick={() => setNumQuestions(length)}
+                            className={isSelected
+                              ? "rounded-2xl border-2 border-emerald-600 bg-emerald-50 px-4 py-3 text-center font-semibold text-emerald-900 dark:border-emerald-400 dark:bg-emerald-400/10 dark:text-emerald-200"
+                              : "rounded-2xl border border-gray-200 bg-white px-4 py-3 text-center font-semibold text-gray-700 transition hover:border-emerald-500 dark:border-white/15 dark:bg-white/[0.02] dark:text-white/75 dark:hover:border-emerald-400"}
                           >
-                            {topicOption}
-                          </Badge>
-                        ))}
-                      </div>
+                            {length} questions
+                          </button>
+                        );
+                      })}
                     </div>
-                  )}
+                    <p className="mt-2 text-sm text-gray-500 dark:text-white/50">A shorter set is a good way to start.</p>
+                  </section>
+                </div>
 
+                <div className="mt-8 flex flex-col gap-4 rounded-2xl bg-gray-50 p-4 dark:bg-white/[0.04] sm:flex-row sm:items-center sm:justify-between sm:p-5">
+                  <div>
+                    <p className="text-xs font-semibold uppercase tracking-[0.12em] text-gray-500 dark:text-white/50">Your practice session</p>
+                    <p className="mt-1 font-semibold text-gray-900 dark:text-white">
+                      {testType || "Choose an exam"}
+                      {subject ? " · " + subject : ""}
+                      {topic ? " · " + topic : ""}
+                      {testType && subject ? " · " + numQuestions + " questions" : ""}
+                    </p>
+                    <p className="mt-1 text-sm text-gray-500 dark:text-white/55">
+                      {testType && subject ? "Ready when you are." : "Choose an exam and subject to get started."}
+                    </p>
+                  </div>
                   <Button
+                    type="button"
                     onClick={generateQuestions}
-                    disabled={!testType || !subject || isGenerating}
-                    className="w-full bg-emerald-600 dark:bg-emerald-400 hover:bg-emerald-700 dark:hover:bg-emerald-500 text-white dark:text-black"
+                    disabled={!isPracticeReady || !testType || !subject || isGenerating}
+                    className="min-h-12 rounded-full bg-emerald-700 px-6 text-white hover:bg-emerald-800 disabled:opacity-50 dark:bg-emerald-400 dark:text-black dark:hover:bg-emerald-300"
                   >
-                    {isGenerating ? "Generating Questions..." : "Generate Practice Questions"}
+                    {isGenerating ? "Building your set..." : "Generate Practice Test"}
+                    {!isGenerating && <BookOpen className="ml-2 h-4 w-4" aria-hidden="true" />}
                   </Button>
+                </div>
 
-                  {/* Error */}
-                  {error && (
-                    <div className="p-4 bg-red-50 dark:bg-red-500/10 border border-red-200 dark:border-red-500/20 rounded-lg">
-                      <p className="text-red-600 dark:text-red-400 text-sm">{error}</p>
-                    </div>
-                  )}
-
-                  {/* Loader */}
-                  {isGenerating && (
-                    <div className="loader">
-                      <div className="cell d-0"></div>
-                      <div className="cell d-1"></div>
-                      <div className="cell d-2"></div>
-                      <div className="cell d-1"></div>
-                      <div className="cell d-2"></div>
-                      <div className="cell d-2"></div>
-                      <div className="cell d-3"></div>
-                      <div className="cell d-3"></div>
-                      <div className="cell d-4"></div>
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
+                {error && (
+                  <div role="alert" className="mt-5 rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-700 dark:border-red-500/20 dark:bg-red-500/10 dark:text-red-300">
+                    {error}
+                  </div>
+                )}
+                {isGenerating && (
+                  <div className="mt-5 flex items-center justify-center gap-3 rounded-xl bg-emerald-50 py-4 text-sm font-medium text-emerald-900 dark:bg-emerald-400/10 dark:text-emerald-200" role="status" aria-live="polite">
+                    <span className="h-2.5 w-2.5 animate-pulse rounded-full bg-emerald-600 dark:bg-emerald-400" />
+                    Building a practice set for you…
+                  </div>
+                )}
+              </section>
             </div>
           ) : (
             /* Quiz Interface */
             <div className="space-y-6">
-              {/* Progress */}
-              <div className="flex items-center justify-between">
-                <div className="text-sm text-gray-600 dark:text-white/70">
-                  {testType} - {subject} {topic && `- ${topic}`}
-                </div>
-                <div className="text-sm text-gray-600 dark:text-white/70">
-                  Question {currentQuestion + 1} of {questions.length}
-                </div>
-              </div>
-
               {!showResults ? (
-                /* Current Question */
-                <Card className="bg-white dark:bg-black border dark:border-white/20">
-                  <CardHeader>
-                    <CardTitle className="text-gray-900 dark:text-white">
-                      Question {currentQuestion + 1}
-                      <Badge variant="outline" className="ml-2 dark:border-white/50 dark:text-white">
+                <section className="rounded-[1.75rem] bg-white p-4 shadow-2xl shadow-emerald-950/[0.08] dark:bg-[#0b110d] sm:p-6">
+                  <div className="flex items-center justify-between gap-4">
+                    <p className="text-xs font-bold uppercase tracking-[0.14em] text-gray-800 dark:text-white/80 sm:text-sm">
+                      Practice Session
+                    </p>
+                    <span className="inline-flex shrink-0 items-center gap-2 text-[0.7rem] font-semibold uppercase tracking-[0.12em] text-gray-600 dark:text-white/65 sm:text-xs">
+                      <span className="h-2 w-2 rounded-full bg-emerald-600 ring-4 ring-emerald-100 dark:bg-emerald-400 dark:ring-emerald-400/15" />
+                      In Progress
+                    </span>
+                  </div>
+
+                  <div
+                    className="mt-4 h-1.5 overflow-hidden rounded-full bg-gray-100 dark:bg-white/10"
+                    role="progressbar"
+                    aria-label="Practice session progress"
+                    aria-valuemin={0}
+                    aria-valuemax={questions.length}
+                    aria-valuenow={currentQuestion + 1}
+                    aria-valuetext={`${currentQuestion + 1} of ${questions.length} questions`}
+                  >
+                    <div
+                      className="h-full rounded-full bg-emerald-600 transition-[width] duration-300 motion-reduce:transition-none dark:bg-emerald-400"
+                      style={{ width: `${((currentQuestion + 1) / questions.length) * 100}%` }}
+                    />
+                  </div>
+
+                  <div className="mt-6 rounded-2xl bg-gray-50 p-4 dark:bg-white/[0.04] sm:p-5">
+                    <div className="flex flex-wrap items-center justify-between gap-3">
+                      <p className="text-[0.68rem] font-bold uppercase tracking-[0.13em] text-gray-500 dark:text-white/50 sm:text-xs">
+                        {subject}
+                        <span className="px-1 text-emerald-700 dark:text-emerald-400">·</span>
+                        Question {currentQuestion + 1}
+                        {topic && <><span className="px-1 text-emerald-700 dark:text-emerald-400">·</span>{topic}</>}
+                      </p>
+                      <Badge variant="outline" className="shrink-0 border-gray-300 text-gray-600 dark:border-white/20 dark:text-white/65">
                         {questions[currentQuestion]?.difficulty || "Medium"}
                       </Badge>
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="text-gray-900 dark:text-white mb-6 text-lg">
+                    </div>
+
+                    <div id="active-practice-question" role="heading" aria-level={2} className="mt-3 text-lg font-semibold leading-7 text-gray-950 dark:text-white sm:text-2xl sm:leading-9">
                       {renderTextWithMath(questions[currentQuestion]?.question)}
                     </div>
 
-                    <div className="space-y-3">
-                      {questions[currentQuestion]?.choices.map((choice, index) => (
-                        <button
-                          key={index}
-                          onClick={() => selectAnswer(currentQuestion, index)}
-                          className={`w-full p-4 text-left border-2 rounded-lg transition-all ${
-                            selectedAnswers[currentQuestion] === index
-                              ? "border-emerald-500 bg-emerald-50 dark:bg-emerald-400/10 dark:border-emerald-400"
-                              : "border-gray-200 dark:border-white/20 hover:border-gray-300 dark:hover:border-white/70"
-                          }`}
-                        >
-                          <div className="flex items-center">
-                            <span className="w-8 h-8 rounded-full border-2 border-current flex items-center justify-center mr-3 text-sm font-semibold">
-                              {String.fromCharCode(65 + index)}
-                            </span>
-                            <span className="text-gray-900 dark:text-white">
-                              {renderTextWithMath(choice)}
-                            </span>
-                          </div>
-                        </button>
-                      ))}
-                    </div>
+                    <div className="mt-5 space-y-2.5" role="group" aria-labelledby="active-practice-question">
+                      {questions[currentQuestion]?.choices.map((choice, index) => {
+                        const isSelected = selectedAnswers[currentQuestion] === index;
+                        const letter = String.fromCharCode(65 + index);
 
-                    <div className="flex justify-between mt-8">
+                        return (
+                          <button
+                            key={index}
+                            type="button"
+                            aria-pressed={isSelected}
+                            onClick={() => selectAnswer(currentQuestion, index)}
+                            className={`flex w-full items-center gap-3 rounded-xl border px-3 py-2.5 text-left transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-600 focus-visible:ring-offset-2 dark:focus-visible:ring-emerald-400 dark:focus-visible:ring-offset-black ${isSelected
+                              ? "border-emerald-600/80 bg-emerald-50 text-gray-950 shadow-sm dark:border-emerald-400/80 dark:bg-emerald-400/10 dark:text-white"
+                              : "border-gray-200/70 bg-white/80 text-gray-700 hover:border-emerald-500/70 dark:border-white/10 dark:bg-white/[0.02] dark:text-white/75 dark:hover:border-emerald-400/60"
+                            }`}
+                          >
+                            <span className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-lg text-xs font-semibold ${isSelected
+                              ? "bg-emerald-700 text-white dark:bg-emerald-400 dark:text-black"
+                              : "border border-gray-300/80 text-gray-700 dark:border-white/20 dark:text-white/75"
+                            }`}>
+                              {letter}
+                            </span>
+                            <span className={`min-w-0 flex-1 ${isSelected ? "font-semibold" : ""}`}>
+                              {renderTextWithMath(choice, { inferStandaloneMath: true })}
+                            </span>
+                            {isSelected && (
+                              <span className="ml-auto inline-flex shrink-0 items-center gap-1 text-xs font-semibold text-emerald-800 dark:text-emerald-300">
+                                <CheckCircle className="h-4 w-4" aria-hidden="true" />
+                                <span className="hidden sm:inline">Selected</span>
+                              </span>
+                            )}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+
+                  <div className="mt-5 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                    <span className="text-xs font-medium text-gray-500 dark:text-white/50">
+                      {currentQuestion + 1} of {questions.length} questions
+                    </span>
+                    <div className="flex w-full justify-between gap-2 sm:w-auto sm:justify-end">
                       <Button
                         variant="outline"
                         onClick={() => setCurrentQuestion(Math.max(0, currentQuestion - 1))}
                         disabled={currentQuestion === 0}
-                        className="dark:bg-black dark:border-white/50 dark:text-white"
+                        className="min-h-10 rounded-full border-gray-300 bg-white px-5 text-gray-800 dark:border-white/20 dark:bg-white/[0.03] dark:text-white"
                       >
                         Previous
                       </Button>
@@ -447,7 +579,7 @@ export default function Practice() {
                         <Button
                           onClick={submitAnswers}
                           disabled={Object.keys(selectedAnswers).length !== questions.length}
-                          className="bg-emerald-600 dark:bg-emerald-400 hover:bg-emerald-700 dark:hover:bg-emerald-500 text-white dark:text-black"
+                          className="min-h-10 rounded-full bg-emerald-700 px-5 text-white hover:bg-emerald-800 disabled:opacity-50 dark:bg-emerald-400 dark:text-black dark:hover:bg-emerald-300"
                         >
                           Submit Answers
                         </Button>
@@ -456,14 +588,14 @@ export default function Practice() {
                           onClick={() =>
                             setCurrentQuestion(Math.min(questions.length - 1, currentQuestion + 1))
                           }
-                          className="bg-emerald-600 dark:bg-emerald-400 hover:bg-emerald-700 dark:hover:bg-emerald-500 text-white dark:text-black"
+                          className="min-h-10 rounded-full bg-emerald-700 px-5 text-white hover:bg-emerald-800 dark:bg-emerald-400 dark:text-black dark:hover:bg-emerald-300"
                         >
                           Next
                         </Button>
                       )}
                     </div>
-                  </CardContent>
-                </Card>
+                  </div>
+                </section>
               ) : (
                 /* Results */
                 <div className="space-y-6">
@@ -514,7 +646,7 @@ export default function Practice() {
                                   {String.fromCharCode(65 + cIndex)}.
                                 </span>
                                 <span className="ml-2 text-gray-900 dark:text-white">
-                                  {renderTextWithMath(choice)}
+                                  {renderTextWithMath(choice, { inferStandaloneMath: true })}
                                 </span>
                               </div>
                             ))}

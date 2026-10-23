@@ -1,185 +1,347 @@
-// server/index.js
 import "dotenv/config";
+import { existsSync, readFileSync } from "node:fs";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
+import dotenv from "dotenv";
 import express from "express";
 import cors from "cors";
-import path from "path";
-import { fileURLToPath } from "url";
-
-import { generateChatResponse } from "./routes/chat.js";
-import { generateQuestions } from "./routes/question.js";
-import {
-  createConcurrencyLimiter,
-  createRateLimiter,
-} from "./middleware/rateLimit.js";
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
+import { restoreEscapedLatex } from "../client/lib/math-text.js";
+import { createConcurrencyLimiter, createRateLimiter } from "./middleware/rateLimit.js";
 
 const app = express();
+const PORT = Number(process.env.PORT) || Number(process.env.LOCAL_API_PORT) || 3001;
+const HOST = process.env.HOST || (process.env.PORT || process.env.RENDER ? "0.0.0.0" : "127.0.0.1");
+const MODEL_CHAT = process.env.GROQ_MODEL_CHAT || "openai/gpt-oss-20b";
+const MODEL_QA = process.env.GROQ_MODEL_QA || "openai/gpt-oss-20b";
+const GROQ_CHAT_URL = "https://api.groq.com/openai/v1/chat/completions";
+const DIST_DIR = path.resolve(fileURLToPath(new URL("../dist", import.meta.url)));
+const DIST_INDEX = path.join(DIST_DIR, "index.html");
 
-// Render places one proxy in front of the Express server.
 app.set("trust proxy", 1);
 
-// IMPORTANT: Render provides PORT automatically
-const PORT = Number(process.env.PORT) || 10000;
-
-const defaultOrigins = [
-  "https://prepmind.org",
-  "https://www.prepmind.org",
-  "http://localhost:5173",
-  "http://localhost:4173",
-];
+app.use(express.json({ limit: "16kb", strict: true }));
 const allowedOrigins = new Set(
-  (process.env.ALLOWED_ORIGINS || defaultOrigins.join(","))
+  (process.env.ALLOWED_ORIGINS || [
+    "https://prepmind.org",
+    "https://www.prepmind.org",
+    "http://localhost:5173",
+    "http://127.0.0.1:5173",
+    "http://localhost:5174",
+    "http://127.0.0.1:5174",
+    "http://localhost:4173",
+    "http://127.0.0.1:4173",
+  ].join(","))
     .split(",")
     .map((origin) => origin.trim())
     .filter(Boolean)
 );
-
-// Middleware (the middle between a request and the final response)
-app.use(express.json({ limit: "16kb", strict: true }));
-app.use(
-  cors({
-    origin(origin, callback) {
-      // Requests without an Origin header include same-origin and server requests.
-      callback(null, !origin || allowedOrigins.has(origin));
-    },
-    methods: ["GET", "POST", "HEAD"],
-    allowedHeaders: ["Content-Type"],
-  })
-);
-
+app.use(cors({
+  origin(origin, callback) {
+    callback(null, !origin || allowedOrigins.has(origin));
+  },
+  methods: ["GET", "POST", "HEAD"],
+  allowedHeaders: ["Content-Type"],
+}));
 app.use("/api", (_req, res, next) => {
   res.set("Cache-Control", "no-store");
   next();
 });
 
-const chatBurstLimit = createRateLimiter({
-  windowMs: 60 * 1000,
-  limit: 15,
-  message: "Too many tutor messages. Please wait a minute and try again.",
-});
-const chatDailyLimit = createRateLimiter({
-  windowMs: 24 * 60 * 60 * 1000,
-  limit: 75,
-  message: "You reached today's tutor limit. Please try again tomorrow.",
-});
-const questionBurstLimit = createRateLimiter({
-  windowMs: 10 * 60 * 1000,
-  limit: 5,
-  message: "Too many question sets. Please wait a few minutes and try again.",
-});
-const questionDailyLimit = createRateLimiter({
-  windowMs: 24 * 60 * 60 * 1000,
-  limit: 15,
-  message: "You reached today's question-generation limit. Please try again tomorrow.",
-});
-const geminiConcurrencyLimit = createConcurrencyLimiter({
-  limit: 4,
-  message: "PrepMind is busy right now. Please try again shortly.",
-});
+const chatBurstLimit = createRateLimiter({ windowMs: 60 * 1000, limit: 15, message: "Too many tutor messages. Please wait a minute and try again." });
+const chatDailyLimit = createRateLimiter({ windowMs: 24 * 60 * 60 * 1000, limit: 75, message: "You reached today's tutor limit. Please try again tomorrow." });
+const questionBurstLimit = createRateLimiter({ windowMs: 10 * 60 * 1000, limit: 5, message: "Too many question sets. Please wait a few minutes and try again." });
+const questionDailyLimit = createRateLimiter({ windowMs: 24 * 60 * 60 * 1000, limit: 15, message: "You reached today's question-generation limit. Please try again tomorrow." });
+const apiConcurrencyLimit = createConcurrencyLimiter({ limit: 4, message: "PrepMind is busy right now. Please try again shortly." });
 
-function validShortText(value, maxLength) {
-  return (
-    typeof value === "string" &&
-    value.trim().length > 0 &&
-    value.trim().length <= maxLength
-  );
+function httpError(status, message) {
+  const error = new Error(message);
+  error.status = status;
+  return error;
 }
 
-// API ROUTES
-// Chat (Tutor)
-app.post(
-  "/api/chat",
-  chatBurstLimit,
-  chatDailyLimit,
-  geminiConcurrencyLimit,
-  async (req, res) => {
-    try {
-      const { message } = req.body || {};
-      if (!validShortText(message, 350)) {
-        return res.status(400).json({
-          error: "Your message must be between 1 and 350 characters.",
-        });
-      }
-
-      const content = await generateChatResponse(message);
-      res.json({ content });
-    } catch (err) {
-      console.error("[/api/chat] error:", err?.message || err);
-      res.status(500).json({ error: "Chat is temporarily unavailable." });
-    }
+function readLocalGroqKey() {
+  try {
+    const localEnv = dotenv.parse(readFileSync(new URL("../.env", import.meta.url), "utf8"));
+    return localEnv.GROQ_API_KEY?.trim() || "";
+  } catch {
+    return "";
   }
-);
+}
 
-// Practice / Generate Questions
-app.post(
-  "/api/generate-questions",
-  questionBurstLimit,
-  questionDailyLimit,
-  geminiConcurrencyLimit,
-  async (req, res) => {
-    try {
-      const payload = req.body || {};
-      const fieldsAreValid =
-        validShortText(payload.testType, 30) &&
-        validShortText(payload.subject, 80) &&
-        (payload.topic == null || validShortText(payload.topic, 100));
+function getGroqKey() {
+  const key = readLocalGroqKey() || process.env.GROQ_API_KEY?.trim();
+  if (!key) throw httpError(503, "GROQ_API_KEY is not configured in the server environment.");
+  return key;
+}
 
-      if (!fieldsAreValid) {
-        return res.status(400).json({
-          error: "The selected test, subject, or topic is invalid.",
-        });
-      }
+function providerErrorMessage(status) {
+  if (status === 401 || status === 403) {
+    return "Groq rejected the API key. Check GROQ_API_KEY in the server environment.";
+  }
+  if (status === 402) {
+    return "Groq reports that the account needs billing or credits. Check your Groq Console.";
+  }
+  if (status === 429) {
+    return "Groq's rate or usage limit was reached. Check the limits in your Groq Console.";
+  }
+  if (status === 400) {
+    return "Groq rejected the request. Check the model and request settings in the local server terminal.";
+  }
+  if (status >= 500) return "Groq is temporarily unavailable. Try again shortly.";
+  return "The Groq request failed. Check the local server terminal.";
+}
 
-      const requestedCount = Number(payload.numQuestions);
-      if (
-        !Number.isInteger(requestedCount) ||
-        requestedCount < 1 ||
-        requestedCount > 15
-      ) {
-        return res.status(400).json({
-          error: "Choose between 1 and 15 questions.",
-        });
-      }
+async function createCompletion({
+  kind,
+  messages,
+  maxCompletionTokens,
+  responseFormat,
+  includeFinishReason = false,
+  retryStructuredGeneration = true,
+}) {
+  const apiKey = getGroqKey();
+  const model = kind === "chat" ? MODEL_CHAT : MODEL_QA;
+  const isGptOss = model.startsWith("openai/gpt-oss-");
+  let response;
 
-      const result = await generateQuestions({
-        ...payload,
-        numQuestions: requestedCount,
-      });
-      res.json({ questions: result.questions || [] });
-    } catch (err) {
-      console.error("[/api/generate-questions] error:", err?.message || err);
-      res.status(500).json({
-        error: "Question generation is temporarily unavailable.",
+  try {
+    response = await fetch(GROQ_CHAT_URL, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${apiKey}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        model,
+        messages,
+        max_completion_tokens: maxCompletionTokens,
+        ...(isGptOss ? { reasoning_effort: "low", include_reasoning: false } : {}),
+        ...(responseFormat ? { response_format: responseFormat } : {}),
+      }),
+    });
+  } catch {
+    throw httpError(502, "Could not reach Groq. Check your internet connection and try again.");
+  }
+
+  const packet = await response.json().catch(() => null);
+  if (!response.ok) {
+    const providerMessage = packet?.error?.message;
+    if (
+      kind === "qa" &&
+      response.status === 400 &&
+      retryStructuredGeneration &&
+      /failed to generate json|does not match the expected schema|failed_generation/i.test(String(providerMessage || ""))
+    ) {
+      console.warn("[Groq] structured question generation failed; retrying once");
+      return createCompletion({
+        kind,
+        messages,
+        maxCompletionTokens,
+        responseFormat,
+        includeFinishReason,
+        retryStructuredGeneration: false,
       });
     }
+    console.error(
+      `[Groq] request failed with HTTP ${response.status}${providerMessage ? `: ${String(providerMessage).slice(0, 240)}` : ""}`
+    );
+    if (
+      kind === "qa" &&
+      response.status === 400 &&
+      /failed to generate json|does not match the expected schema|failed_generation/i.test(String(providerMessage || ""))
+    ) {
+      throw httpError(502, "Groq could not generate a valid question batch after a retry. Please try again.");
+    }
+    throw httpError(response.status, providerErrorMessage(response.status));
   }
-);
 
-// STATIC + SPA FALLBACK
-// If someone types a route like /about, it tries /about.html
-// Show files from the dist folder. If missing, try adding .html
-const distDir = path.resolve(__dirname, "../dist");
-app.use(express.static(distDir, { extensions: ["html"] }));
+  const choice = packet?.choices?.[0];
+  const content = choice?.message?.content;
+  if (typeof content !== "string" || !content.trim()) {
+    throw httpError(502, "Groq returned an empty response. Please try again.");
+  }
+  const completion = { content: content.trim(), finishReason: choice.finish_reason || null };
+  return includeFinishReason ? completion : completion.content;
+}
 
-const sendIndex = (_req, res) =>
-  res.sendFile(path.join(distDir, "index.html"));
+function validText(value, maxLength) {
+  return typeof value === "string" && value.trim().length > 0 && value.trim().length <= maxLength;
+}
 
-app.get("/", sendIndex);
-app.head("/", (_req, res) => res.sendStatus(200));
-app.get(/^\/(?!api).*/, sendIndex);
-app.head(/^\/(?!api).*/, (_req, res) => res.sendStatus(200));
+const TUTOR_SYSTEM = "You are a helpful SAT, ACT, and AP tutor. Explain clearly and use readable Markdown headings, lists, tables, or code when useful. Write inline math inside $...$ and standalone math inside $$...$$ using valid LaTeX. Keep answers focused, and finish every response at a complete sentence and equation.";
 
-// local host message
-app.listen(PORT, () => {
-  console.log(`Server listening on :${PORT}`);
-  console.log(
-    "Has GEMINI_CHAT_API_KEY?",
-    Boolean(process.env.GEMINI_CHAT_API_KEY)
-  );
-  console.log(
-    "Has GEMINI_QA_API_KEY?",
-    Boolean(process.env.GEMINI_QA_API_KEY)
-  );
+app.post("/api/chat", chatBurstLimit, chatDailyLimit, apiConcurrencyLimit, async (req, res) => {
+  try {
+    const { message, history = [] } = req.body || {};
+    if (!validText(message, 350)) {
+      return res.status(400).json({ error: "Your message must be between 1 and 350 characters." });
+    }
+
+    const priorMessages = Array.isArray(history)
+      ? history
+          .filter((item) => ["user", "model"].includes(item?.role) && validText(item?.text, 900))
+          .slice(-10)
+          .map((item) => ({
+            role: item.role === "model" ? "assistant" : "user",
+            content: item.text.trim(),
+          }))
+      : [];
+
+    const completion = await createCompletion({
+      kind: "chat",
+      messages: [
+        { role: "system", content: TUTOR_SYSTEM },
+        ...priorMessages,
+        { role: "user", content: message.trim() },
+      ],
+      maxCompletionTokens: 4096,
+      includeFinishReason: true,
+    });
+    res.json({ content: completion.content, truncated: completion.finishReason === "length" });
+  } catch (error) {
+    console.error(`[/api/chat] request failed${error.status ? ` with HTTP ${error.status}` : ""}`);
+    res.status(error.status || 502).json({
+      error: error.status ? error.message : "Chat is temporarily unavailable. Check the local server terminal.",
+    });
+  }
+});
+
+const questionSchema = {
+  type: "object",
+  additionalProperties: false,
+  properties: {
+    questions: {
+      type: "array",
+      items: {
+        type: "object",
+        additionalProperties: false,
+        properties: {
+          question: { type: "string" },
+          choices: { type: "array", items: { type: "string" } },
+          answer: { type: "string", enum: ["A", "B", "C", "D"] },
+          answerIndex: { type: "integer" },
+          difficulty: { type: "string", enum: ["Easy", "Medium", "Hard"] },
+          explanation: { type: "string" },
+        },
+        required: ["question", "choices", "answer", "answerIndex", "difficulty", "explanation"],
+      },
+    },
+  },
+  required: ["questions"],
+};
+
+const QUESTION_SYSTEM = "You create exam practice questions. Return only JSON matching the supplied schema. Each question must have exactly four distinct choices, with exactly one correct answer, a matching answer and answerIndex (A=0, B=1, C=2, D=3), a difficulty, and a short explanation. Check that the question is mathematically consistent and its correct answer appears exactly once among the choices. Never use placeholder words such as undefined, null, or TBD as a question, choice, or explanation. Never include drafting notes, self-corrections, or comments about changing the answer. Wrap every inline math expression in $...$ and standalone math in $$...$$. Use valid KaTeX-supported LaTeX only, and escape every LaTeX backslash as \\\\ inside JSON strings. Do not leave equations as plain text inside parentheses. Use TeX commands for Greek symbols, including $\\\\Delta H$, $q=mc\\\\Delta T$, and $\\\\Delta G$; do not write names such as DeltaH or DeltaT. Write inequalities with valid commands such as \\\\ge, \\\\le, \\\\geq, or \\\\leq, never bare ge/le text. Write chemical formulas and equations with core LaTeX such as $\\\\mathrm{H_2O}$ and $\\\\to$; do not use the unsupported \\\\ce command. Format values with units using a thin space and upright units, for example $2.0\\\\,\\\\mathrm{m/s^2}$, $-300\\\\,\\\\mathrm{J}$, and $0\\\\,^{\\\\circ}\\\\mathrm{C}$. Never put comma, semicolon, or colon punctuation between a numeric value and its unit.";
+
+function restoreLatexInJson(value) {
+  if (typeof value === "string") return restoreEscapedLatex(value);
+  if (Array.isArray(value)) return value.map(restoreLatexInJson);
+  if (value && typeof value === "object") {
+    return Object.fromEntries(Object.entries(value).map(([key, item]) => [key, restoreLatexInJson(item)]));
+  }
+  return value;
+}
+
+async function makeQuestionBatch({ testType, subject, topic, count, retryInvalidBatch = true, retryNote = "" }) {
+  const prompt = `Generate exactly ${count} multiple-choice questions.\nTest: ${testType}\nSubject: ${subject}\nTopic: ${topic || "General"}\nEach question needs four distinct choices, answer A-D, matching answerIndex 0-3, difficulty Easy/Medium/Hard, and an explanation under 20 words. Verify each answer and explanation. ${retryNote}`;
+  const content = await createCompletion({
+    kind: "qa",
+    messages: [
+      { role: "system", content: QUESTION_SYSTEM },
+      { role: "user", content: prompt },
+    ],
+    maxCompletionTokens: 4096,
+    responseFormat: {
+      type: "json_schema",
+      json_schema: {
+        name: "practice_questions",
+        strict: true,
+        schema: questionSchema,
+      },
+    },
+  });
+
+  let packet;
+  try {
+    packet = restoreLatexInJson(JSON.parse(content));
+  } catch {
+    if (retryInvalidBatch) {
+      console.warn("[Groq] question batch was not valid JSON; retrying once");
+      return makeQuestionBatch({ testType, subject, topic, count, retryInvalidBatch: false, retryNote: "The previous response was not valid JSON. Return only JSON matching the required schema." });
+    }
+    throw httpError(502, "Groq returned questions in an unreadable format. Please try again.");
+  }
+
+  const questions = packet?.questions;
+  const hasPlaceholderOrDrafting = (value) => /\b(?:undefined|null|tbd)\b|(?:wait,?\s*(?:the\s+)?correct|actually,?\s*(?:the\s+)?answer|let's\s+(?:adjust|fix)|I should correct)/i.test(value);
+  const isValidQuestion = (question) => {
+    const choices = question?.choices;
+    const distinctChoices = Array.isArray(choices) && new Set(choices.map((choice) =>
+      typeof choice === "string" ? choice.trim().toLowerCase().replace(/\s+/g, " ") : ""
+    )).size === 4;
+    const textIsClean = [question?.question, ...(Array.isArray(choices) ? choices : []), question?.explanation]
+      .every((value) => typeof value === "string" && !hasPlaceholderOrDrafting(value));
+    return validText(question?.question, 3000) &&
+      Array.isArray(choices) && choices.length === 4 && choices.every((choice) => validText(choice, 1000)) &&
+      distinctChoices && textIsClean &&
+      ["A", "B", "C", "D"].includes(question?.answer) &&
+      question?.answerIndex === ["A", "B", "C", "D"].indexOf(question.answer) &&
+      ["Easy", "Medium", "Hard"].includes(question?.difficulty) &&
+      validText(question?.explanation, 1000);
+  };
+  const valid = Array.isArray(questions) && questions.length === count && questions.every(isValidQuestion);
+  if (!valid && retryInvalidBatch) {
+    console.warn("[Groq] question batch failed completeness, choice, or content checks; retrying once");
+    return makeQuestionBatch({
+      testType,
+      subject,
+      topic,
+      count,
+      retryInvalidBatch: false,
+      retryNote: "The prior batch had duplicate choices or invalid/self-correcting content. Generate a fresh valid batch with distinct choices and concise finished explanations.",
+    });
+  }
+  if (!valid) throw httpError(502, "Groq returned an incomplete question set after a retry. Please try again.");
+  return questions;
+}
+
+app.post("/api/generate-questions", questionBurstLimit, questionDailyLimit, apiConcurrencyLimit, async (req, res) => {
+  try {
+    const { testType, subject, topic = "General", numQuestions } = req.body || {};
+    const count = Number(numQuestions);
+    if (!validText(testType, 30) || !validText(subject, 80) || (topic != null && !validText(topic, 100))) {
+      return res.status(400).json({ error: "The selected test, subject, or topic is invalid." });
+    }
+    if (!Number.isInteger(count) || count < 1 || count > 15) {
+      return res.status(400).json({ error: "Choose between 1 and 15 questions." });
+    }
+
+    const questions = [];
+    for (let remaining = count; remaining > 0; remaining -= 5) {
+      const batchCount = Math.min(5, remaining);
+      questions.push(...await makeQuestionBatch({ testType, subject, topic, count: batchCount }));
+    }
+    res.json({ questions });
+  } catch (error) {
+    console.error(`[/api/generate-questions] request failed${error.status ? ` with HTTP ${error.status}` : ""}`);
+    res.status(error.status || 502).json({
+      error: error.status ? error.message : "Question generation failed. Check the local server terminal.",
+    });
+  }
+});
+
+app.use(express.static(DIST_DIR, { extensions: ["html"] }));
+app.get(/^\/(?!api).*/, (_req, res, next) => {
+  if (!existsSync(DIST_INDEX)) return res.status(404).send("Frontend build not found.");
+  res.sendFile(DIST_INDEX, (error) => {
+    if (error) next(error);
+  });
+});
+app.head(/^\/(?!api).*/, (_req, res) => {
+  if (!existsSync(DIST_INDEX)) return res.sendStatus(404);
+  res.sendStatus(200);
+});
+
+app.listen(PORT, HOST, () => {
+  console.log(`PrepMind API server listening at http://${HOST}:${PORT}`);
+  console.log(`Groq key loaded: ${readLocalGroqKey() || process.env.GROQ_API_KEY?.trim() ? "yes" : "no, add it to .env"}`);
 });

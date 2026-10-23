@@ -1,235 +1,247 @@
 import { useEffect } from "react";
 import { Link } from "react-router-dom";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
-//import icons
+import { InlineMath } from "react-katex";
 import {
-  Brain,
+  ArrowRight,
   BookOpen,
-  MessageSquare,
-  Lightbulb,
   CheckCircle2,
-  Users,
-  Clock,
-  Award,
+  Lightbulb,
+  MessageSquare,
 } from "lucide-react";
 import Layout from "@/components/Layout.jsx";
+
+const DEMO_LIMIT_MATH = String.raw`\lim\limits_{x \to 2} \frac{x^2 - 4}{x - 2}`;
 
 export default function Index() {
   useEffect(() => {
     const obj = document.getElementById("countryCount");
+    if (!obj) return undefined;
 
-    if (!obj) {
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+      obj.textContent = "21";
       return undefined;
     }
 
     let startTimestamp = null;
     let animationFrameId = null;
-
     const animateValue = (target, start, end, duration) => {
       const step = (timestamp) => {
-        if (!startTimestamp) {
-          startTimestamp = timestamp;
-        }
-
+        if (!startTimestamp) startTimestamp = timestamp;
         const progress = Math.min((timestamp - startTimestamp) / duration, 1);
-        target.textContent = Math.floor(progress * (end - start) + start);
-
+        const easedProgress = 1 - Math.pow(1 - progress, 4);
+        target.textContent = String(Math.floor(easedProgress * (end - start) + start));
         if (progress < 1) {
           animationFrameId = window.requestAnimationFrame(step);
+        } else {
+          target.textContent = String(end);
+          target.classList.add("country-count-finished");
         }
       };
-
       animationFrameId = window.requestAnimationFrame(step);
     };
 
     animateValue(obj, 0, 21, 3200);
-
     return () => {
-      if (animationFrameId) {
-        window.cancelAnimationFrame(animationFrameId);
-      }
+      if (animationFrameId) window.cancelAnimationFrame(animationFrameId);
     };
   }, []);
 
   return (
     <Layout>
-      {/* Main Header */}
-      <section className="relative overflow-hidden bg-gradient-to-br from-emerald-50 to-green-50 dark:from-black dark:to-black">
-        {/* Floating elements */}
-        <div className="absolute top-20 left-10 w-20 h-20 bg-emerald-100 dark:bg-emerald-400/10 rounded-full blur-xl opacity-60" />
-        <div className="absolute top-40 right-20 w-32 h-32 bg-blue-100 dark:bg-emerald-400/10 rounded-full blur-xl opacity-60" />
-        <div className="absolute bottom-20 left-1/4 w-24 h-24 bg-purple-100 dark:bg-emerald-400/10 rounded-full blur-xl opacity-60" />
+      <main className="overflow-hidden bg-white text-gray-950 dark:bg-black dark:text-white">
+        <section className="relative border-b border-emerald-950/10 bg-gradient-to-br from-emerald-50 via-white to-green-50 dark:border-white/10 dark:from-black dark:via-black dark:to-emerald-950/30">
+          <div className="pointer-events-none absolute -right-24 top-16 h-80 w-80 rounded-full bg-emerald-300/20 blur-3xl dark:bg-emerald-400/10" />
+          <div className="pointer-events-none absolute -left-20 bottom-0 h-64 w-64 rounded-full bg-lime-300/20 blur-3xl dark:bg-lime-400/5" />
+          <div className="relative mx-auto grid max-w-7xl items-center gap-14 px-4 py-14 sm:px-6 sm:py-20 lg:grid-cols-[1.05fr_0.95fr] lg:px-8 lg:py-24">
+            <div className="max-w-2xl">
+              <div className="mb-7 inline-flex items-center gap-2 rounded-full border border-emerald-800/10 bg-white/80 px-4 py-2 text-sm font-medium text-emerald-900 shadow-sm dark:border-emerald-300/20 dark:bg-white/5 dark:text-emerald-200">
+                <Lightbulb className="h-4 w-4" aria-hidden="true" />
+                Powered by Google Gemini AI
+              </div>
 
-        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20">
-          <div className="text-center">
-            {/* Powered by Advanced AI badge */}
-            <div className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-emerald-100 dark:bg-emerald-400/10 text-emerald-700 dark:text-emerald-400 mb-8">
-              <Lightbulb className="w-4 h-4 mr-2" />
-              Powered by Google Gemini AI
+              <h1 className="max-w-2xl text-[3.125rem] font-bold leading-[1.04] tracking-tight sm:text-[4.125rem] lg:text-[5rem]">
+                Prep smarter,
+                <br />
+                <span className="text-emerald-700 dark:text-emerald-400">not harder.</span>
+              </h1>
+              <p className="mt-6 max-w-xl text-lg leading-8 text-gray-600 dark:text-white/70 sm:text-xl">
+                Free, focused SAT, ACT, and AP practice to help you feel ready for what comes next.
+                Learn at your pace, with tools built around the way students study.
+              </p>
+
+              <div className="mt-8 flex flex-col gap-3 sm:flex-row">
+                <Link
+                  to="/practice"
+                  className="inline-flex items-center justify-center gap-2 rounded-full bg-emerald-700 px-6 py-3.5 font-semibold text-white shadow-lg shadow-emerald-900/15 transition hover:-translate-y-0.5 hover:bg-emerald-800 focus:outline-none focus:ring-2 focus:ring-emerald-600 focus:ring-offset-2 dark:bg-emerald-400 dark:text-black dark:hover:bg-emerald-300"
+                >
+                  Build a practice set <ArrowRight className="h-4 w-4" aria-hidden="true" />
+                </Link>
+                <Link
+                  to="/tutor"
+                  className="inline-flex items-center justify-center gap-2 rounded-full border border-gray-300 bg-white/80 px-6 py-3.5 font-semibold text-gray-900 transition hover:-translate-y-0.5 hover:border-emerald-600 hover:text-emerald-800 focus:outline-none focus:ring-2 focus:ring-emerald-600 focus:ring-offset-2 dark:border-white/20 dark:bg-white/5 dark:text-white dark:hover:border-emerald-400 dark:hover:text-emerald-300"
+                >
+                  Ask your AI tutor <MessageSquare className="h-4 w-4" aria-hidden="true" />
+                </Link>
+              </div>
+
+              <p className="mt-9 max-w-2xl text-[1.625rem] font-semibold leading-snug tracking-tight text-gray-950 dark:text-white md:text-[1.95rem]">
+                Trusted by students in over{" "}
+                <span id="countryCount" className="country-count mx-1 inline-block align-baseline text-[2.75rem] font-extrabold leading-none text-emerald-700 dark:text-emerald-400 sm:text-[3.25rem]">
+                  0
+                </span>{" "}
+                countries
+              </p>
             </div>
 
-            {/* Main headline */}
-            <h1 className="text-5xl md:text-7xl font-bold tracking-tight mb-6">
-              <span className="text-gray-900 dark:text-white">Prep </span>
-              <span className="text-emerald-600 dark:text-emerald-400">Smarter.</span>
-              <br />
-              <span className="text-emerald-600 dark:text-emerald-400">Not Harder.</span>
-            </h1>
-
-            <p className="max-w-3xl mx-auto text-xl text-gray-600 dark:text-white/70 leading-relaxed mb-6">
-              PrepMind provides free, high-quality SAT, ACT, and AP practice to help students gain
-              equal access to powerful study tools, so they have the same opportunities to succeed
-              as anyone else!
-            </p>
-
-            <p className="text-[1.625rem] md:text-[1.95rem] font-semibold tracking-tight text-gray-900 dark:text-white mb-10">
-              Trusted by students in{" "}
-              <span id="countryCount" className="text-emerald-600 dark:text-emerald-400">
-                0
-              </span>
-              + countries
-            </p>
-
-            {/* CTA Buttons */}
-            <div className="flex flex-col sm:flex-row gap-4 justify-center mb-16">
-              <Link to="/practice">
-                <button className="animated-button">
-                  <svg viewBox="0 0 24 24" className="arr-2" xmlns="http://www.w3.org/2000/svg">
-                    <path d="M16.1716 10.9999L10.8076 5.63589L12.2218 4.22168L20 11.9999L12.2218 19.778L10.8076 18.3638L16.1716 12.9999H4V10.9999H16.1716Z"></path>
-                  </svg>
-                  <span className="text">Start Practicing</span>
-                  <span className="circle"></span>
-                  <svg viewBox="0 0 24 24" className="arr-1" xmlns="http://www.w3.org/2000/svg">
-                    <path d="M16.1716 10.9999L10.8076 5.63589L12.2218 4.22168L20 11.9999L12.2218 19.778L10.8076 18.3638L16.1716 12.9999H4V10.9999H16.1716Z"></path>
-                  </svg>
-                </button>
-              </Link>
-             <Link to="/tutor">
-  <button className="cssbuttons-io">
-    <svg viewBox="0 0 24 24" className="arr-2" xmlns="http://www.w3.org/2000/svg">
-      <path d="M16.1716 10.9999L10.8076 5.63589L12.2218 4.22168L20 11.9999L12.2218 19.778L10.8076 18.3638L16.1716 12.9999H4V10.9999H16.1716Z"></path>
-    </svg>
-    <span className="text">Meet Your AI Tutor</span>
-    <span className="circle"></span>
-    <svg viewBox="0 0 24 24" className="arr-1" xmlns="http://www.w3.org/2000/svg">
-      <path d="M16.1716 10.9999L10.8076 5.63589L12.2218 4.22168L20 11.9999L12.2218 19.778L10.8076 18.3638L16.1716 12.9999H4V10.9999H16.1716Z"></path>
-    </svg>
-  </button>
-</Link>
-
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Features Section */}
-      <section className="py-20 bg-white dark:bg-black">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-16">
-            <button className="animated-text-button mb-4" data-text="Everything You Need to Succeed">
-              <span className="actual-text">Everything You Need to Succeed</span>
-              <span aria-hidden="true" className="hover-text">Everything You Need to Succeed</span>
-            </button>
-            <p className="text-xl text-gray-600 dark:text-white/70 max-w-3xl mx-auto">
-              Advanced AI technology meets personalized learning to give you the edge you need
-            </p>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            {/* Feature 1 */}
-            <div className="card shadow-lg hover:shadow-xl transition-shadow">
-              <div className="p-8 text-center relative z-10">
-                <div className="w-16 h-16 bg-emerald-100 dark:bg-emerald-400/10 rounded-lg flex items-center justify-center mx-auto mb-6">
-                  <Brain className="w-8 h-8 text-emerald-600 dark:text-emerald-400" />
+            <div className="mx-auto w-full max-w-xl lg:ml-auto">
+              <div className="rounded-[1.75rem] bg-white p-4 shadow-2xl shadow-emerald-950/[0.08] dark:bg-[#0b110d] sm:p-6">
+                <div className="flex items-center justify-between gap-4">
+                  <p className="text-xs font-bold uppercase tracking-[0.14em] text-gray-800 dark:text-white/80 sm:text-sm">
+                    Practice Session
+                  </p>
+                  <span className="inline-flex shrink-0 items-center gap-2 text-[0.7rem] font-semibold uppercase tracking-[0.12em] text-gray-600 dark:text-white/65 sm:text-xs">
+                    <span className="h-2 w-2 rounded-full bg-emerald-600 ring-4 ring-emerald-100 dark:bg-emerald-400 dark:ring-emerald-400/15" />
+                    In Progress
+                  </span>
                 </div>
-                <h3 className="text-2xl font-semibold text-gray-900 dark:text-white mb-4">AI-Generated Questions</h3>
-                <p className="text-gray-600 dark:text-white/70 leading-relaxed">
-                  Get unlimited practice questions tailored to your skill level and difficulty level. Our AI creates fresh content that mirrors real exam patterns.
-                </p>
+
+                <div
+                  className="mt-4 h-1.5 overflow-hidden rounded-full bg-gray-100 dark:bg-white/10"
+                  role="progressbar"
+                  aria-label="Practice session progress"
+                  aria-valuemin={0}
+                  aria-valuemax={10}
+                  aria-valuenow={2}
+                >
+                  <div className="h-full w-1/5 rounded-full bg-emerald-600 dark:bg-emerald-400" />
+                </div>
+
+                <div
+                  className="mt-6 rounded-2xl bg-gray-50 p-4 dark:bg-white/[0.04] sm:p-5"
+                  role="img"
+                  aria-label="AP Calculus AB practice question 2 about limits. What is the limit as x approaches 2 of x squared minus 4 over x minus 2? Answer B, 4, is selected."
+                >
+                  <p className="text-[0.68rem] font-bold uppercase tracking-[0.13em] text-gray-500 dark:text-white/50 sm:text-xs">
+                    AP Calculus AB <span className="px-1 text-emerald-700 dark:text-emerald-400">·</span> Question 2 <span className="px-1 text-emerald-700 dark:text-emerald-400">·</span> Limits
+                  </p>
+                  <h2 className="mt-3 text-lg font-semibold leading-7 text-gray-950 dark:text-white sm:text-2xl">
+                    What is <InlineMath math={DEMO_LIMIT_MATH} />?
+                  </h2>
+
+                  <div className="mt-5 space-y-2.5">
+                    <div className="flex items-center gap-3 rounded-xl border border-gray-200/70 bg-white/80 px-3 py-2.5 text-gray-700 dark:border-white/10 dark:bg-white/[0.02] dark:text-white/75">
+                      <span className="flex h-7 w-7 items-center justify-center rounded-lg border border-gray-300/80 text-xs font-semibold dark:border-white/20">A</span>
+                      <span>0</span>
+                    </div>
+                    <div className="relative flex items-center gap-3 rounded-xl border border-emerald-600/80 bg-emerald-50 px-3 py-2.5 text-gray-950 shadow-sm dark:border-emerald-400/80 dark:bg-emerald-400/10 dark:text-white">
+                      <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-emerald-700 text-xs font-bold text-white dark:bg-emerald-400 dark:text-black">B</span>
+                      <span className="font-semibold">4</span>
+                      <span className="ml-auto inline-flex items-center gap-1 text-xs font-semibold text-emerald-800 dark:text-emerald-300">
+                        <CheckCircle2 className="h-4 w-4" aria-hidden="true" /> Selected
+                      </span>
+                      <svg
+                        aria-hidden="true"
+                        viewBox="0 0 24 24"
+                        className="pointer-events-none absolute -bottom-2 right-7 z-10 h-8 w-8 drop-shadow-md"
+                      >
+                        <path d="M5 2.5v16l4.4-4.3 3.1 6.2 2.4-1.2-3-6.1 6-.3L5 2.5Z" fill="white" stroke="#0b110d" strokeWidth="1.5" strokeLinejoin="round" />
+                      </svg>
+                    </div>
+                    <div className="flex items-center gap-3 rounded-xl border border-gray-200/70 bg-white/80 px-3 py-2.5 text-gray-700 dark:border-white/10 dark:bg-white/[0.02] dark:text-white/75">
+                      <span className="flex h-7 w-7 items-center justify-center rounded-lg border border-gray-300/80 text-xs font-semibold dark:border-white/20">C</span>
+                      <span>2</span>
+                    </div>
+                    <div className="flex items-center gap-3 rounded-xl border border-gray-200/70 bg-white/80 px-3 py-2.5 text-gray-700 dark:border-white/10 dark:bg-white/[0.02] dark:text-white/75">
+                      <span className="flex h-7 w-7 items-center justify-center rounded-lg border border-gray-300/80 text-xs font-semibold dark:border-white/20">D</span>
+                      <span>The limit does not exist</span>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="mt-5 flex items-center justify-between gap-3">
+                  <span className="text-xs font-medium text-gray-500 dark:text-white/50">2 of 10 questions</span>
+                  <Link
+                    to="/practice"
+                    className="inline-flex shrink-0 items-center gap-2 rounded-full bg-emerald-700 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:-translate-y-0.5 hover:bg-emerald-800 focus:outline-none focus:ring-2 focus:ring-emerald-600 focus:ring-offset-2 dark:bg-emerald-400 dark:text-black dark:hover:bg-emerald-300"
+                  >
+                    Try a set <ArrowRight className="h-4 w-4" aria-hidden="true" />
+                  </Link>
+                </div>
               </div>
             </div>
+          </div>
+        </section>
 
-            {/* Feature 2 */}
-            <div className="card shadow-lg hover:shadow-xl transition-shadow">
-              <div className="p-8 text-center relative z-10">
-                <div className="w-16 h-16 bg-emerald-100 dark:bg-emerald-400/10 rounded-lg flex items-center justify-center mx-auto mb-6">
-                  <BookOpen className="w-8 h-8 text-emerald-600 dark:text-emerald-400" />
-                </div>
-                <h3 className="text-2xl font-semibold text-gray-900 dark:text-white mb-4">Instant Explanations</h3>
-                <p className="text-gray-600 dark:text-white/70 leading-relaxed">
-                  Never wonder why an answer is correct. Get detailed, step-by-step explanations that help you understand the concepts.
-                </p>
+        <section className="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8 lg:py-20">
+          <div className="mx-auto mb-12 max-w-2xl text-center">
+            <p className="text-sm font-bold uppercase tracking-[0.16em] text-emerald-700 dark:text-emerald-400">
+              Study your way
+            </p>
+            <h2 className="mt-3 text-3xl font-bold tracking-tight sm:text-4xl">Everything you need to feel ready</h2>
+          </div>
+          <div className="grid gap-5 md:grid-cols-3">
+            <article className="rounded-3xl border border-gray-200 bg-white p-7 transition hover:-translate-y-1 hover:shadow-xl dark:border-white/10 dark:bg-white/[0.03]">
+              <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-emerald-100 text-emerald-800 dark:bg-emerald-400/15 dark:text-emerald-300">
+                <BookOpen className="h-6 w-6" aria-hidden="true" />
               </div>
-            </div>
-
-            {/* Feature 3 */}
-            <div className="card shadow-lg hover:shadow-xl transition-shadow">
-              <div className="p-8 text-center relative z-10">
-                <div className="w-16 h-16 bg-emerald-100 dark:bg-emerald-400/10 rounded-lg flex items-center justify-center mx-auto mb-6">
-                  <MessageSquare className="w-8 h-8 text-emerald-600 dark:text-emerald-400" />
-                </div>
-                <h3 className="text-2xl font-semibold text-gray-900 dark:text-white mb-4">Personal AI Tutor</h3>
-                <p className="text-gray-600 dark:text-white/70 leading-relaxed">
-                  Ask questions anytime, anywhere. Our AI tutor provides personalized help with concepts, strategies, and test-taking techniques.
-                </p>
+              <h3 className="mt-5 text-xl font-semibold">Practice that fits your goal</h3>
+              <p className="mt-2 leading-7 text-gray-600 dark:text-white/65">Choose your exam, focus on a topic, and build a short set you can start right away.</p>
+            </article>
+            <article className="rounded-3xl border border-gray-200 bg-white p-7 transition hover:-translate-y-1 hover:shadow-xl dark:border-white/10 dark:bg-white/[0.03]">
+              <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-emerald-100 text-emerald-800 dark:bg-emerald-400/15 dark:text-emerald-300">
+                <Lightbulb className="h-6 w-6" aria-hidden="true" />
               </div>
-            </div>
+              <h3 className="mt-5 text-xl font-semibold">Understand each answer</h3>
+              <p className="mt-2 leading-7 text-gray-600 dark:text-white/65">Review clear explanations after every practice set and learn from the steps you take.</p>
+            </article>
+            <article className="rounded-3xl border border-gray-200 bg-white p-7 transition hover:-translate-y-1 hover:shadow-xl dark:border-white/10 dark:bg-white/[0.03]">
+              <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-emerald-100 text-emerald-800 dark:bg-emerald-400/15 dark:text-emerald-300">
+                <MessageSquare className="h-6 w-6" aria-hidden="true" />
+              </div>
+              <h3 className="mt-5 text-xl font-semibold">Get help when you need it</h3>
+              <p className="mt-2 leading-7 text-gray-600 dark:text-white/65">Ask the tutor to explain a concept, walk through a problem, or help you find the next step.</p>
+            </article>
           </div>
-        </div>
-      </section>
+        </section>
 
-      {/* Trusted by Students Everywhere Section */}
-      <section className="py-20 bg-emerald-600 dark:bg-emerald-600">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-16">
-            <h2 className="text-4xl font-bold text-white mb-4">
-              Built by a Student, for Students
-            </h2>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-4xl mx-auto">
-            <div className="text-center">
-              <div className="text-6xl font-bold text-white mb-2">3+</div>
-              <div className="text-white/90">Exam Types Supported</div>
-            </div>
-            <div className="text-center">
-              <div className="text-6xl font-bold text-white mb-2">∞</div>
-              <div className="text-white/90">Practice Questions</div>
-            </div>
-            <div className="text-center">
-              <div className="text-6xl font-bold text-white mb-2">24/7</div>
-              <div className="text-white/90">AI Tutor Available</div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Ready to Transform Section */}
-      <section className="py-20 bg-gray-900 dark:bg-gray-900">
-        <div className="max-w-4xl mx-auto text-center px-4 sm:px-6 lg:px-8">
-          <h2 className="text-4xl font-bold text-white mb-4">
-            Ready to Transform Your Test Prep?
-          </h2>
-          <p className="text-xl text-gray-300 mb-8">
-            Prepare smarter with AI-powered practice questions and tutoring.
-          </p>
-          <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Link to="/practice">
-              <button className="animated-button">
-                <svg viewBox="0 0 24 24" className="arr-2" xmlns="http://www.w3.org/2000/svg">
-                  <path d="M16.1716 10.9999L10.8076 5.63589L12.2218 4.22168L20 11.9999L12.2218 19.778L10.8076 18.3638L16.1716 12.9999H4V10.9999H16.1716Z"></path>
+        <section className="bg-emerald-700 py-14 text-white dark:bg-emerald-900/70 sm:py-16">
+          <div className="mx-auto max-w-5xl px-4 text-center sm:px-6 lg:px-8">
+            <p className="text-sm font-semibold uppercase tracking-[0.16em] text-emerald-100">Made for students</p>
+            <h2 className="mt-3 text-3xl font-bold tracking-tight sm:text-4xl">Built by students, for students</h2>
+            <div className="mx-auto mt-9 grid max-w-3xl gap-6 sm:grid-cols-3">
+              <div className="flex flex-col items-center gap-4">
+                <svg className="h-10 w-10 text-emerald-100" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                  <path d="M4 6.5 7 3h10l3 3.5H4Z" />
+                  <path d="M4 11h16M4 15.5h16M4 20h16" />
                 </svg>
-                <span className="text">Start Practicing</span>
-                <span className="circle"></span>
-                <svg viewBox="0 0 24 24" className="arr-1" xmlns="http://www.w3.org/2000/svg">
-                  <path d="M16.1716 10.9999L10.8076 5.63589L12.2218 4.22168L20 11.9999L12.2218 19.778L10.8076 18.3638L16.1716 12.9999H4V10.9999H16.1716Z"></path>
+                <p className="max-w-[16rem] text-lg font-bold leading-snug sm:text-xl">Multiple Exams, One Platform</p>
+              </div>
+              <div className="flex flex-col items-center gap-4">
+                <svg className="h-10 w-10 text-emerald-100" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                  <path d="M14 3H6a3 3 0 0 0-3 3v12a3 3 0 0 0 3 3h12a3 3 0 0 0 3-3v-5" />
+                  <path d="m10 14 8.4-8.4a2.1 2.1 0 0 1 3 3L13 17l-4 1 1-4Z" />
                 </svg>
-              </button>
-            </Link>
+                <p className="max-w-[16rem] text-lg font-bold leading-snug sm:text-xl">Questions Made for You</p>
+              </div>
+              <div className="flex flex-col items-center gap-4">
+                <svg className="h-10 w-10 text-emerald-100" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                  <circle cx="12" cy="12" r="9.5" />
+                  <path d="M7.2 4.1c.3 2.4 1.6 3.8 3.5 4.7.8.4 1.2 1.2 1.1 2.1-.1 1-.8 1.7-1.8 2-1.5.4-2.5 1.4-2.7 3-.1 1.2-.7 2.2-1.8 2.9M16.8 4.3c-1.1 1.3-1.4 2.7-.8 3.8.4.8 1.2 1.2 2.1 1.2 1.1 0 2 .7 2.4 1.7M13 20.3c-.7-1.2-.7-2.5.2-3.5.6-.7 1.5-1.1 2.4-1.1 1.2 0 2.2-.6 2.7-1.7" />
+                </svg>
+                <p className="max-w-[16rem] text-lg font-bold leading-snug sm:text-xl">Learn Anytime, Anywhere</p>
+              </div>
+            </div>
           </div>
-        </div>
-      </section>
+        </section>
+
+        <section className="mx-auto max-w-4xl px-4 py-16 text-center sm:px-6 lg:px-8">
+          <h2 className="text-3xl font-bold tracking-tight sm:text-4xl">Ready to start?</h2>
+          <p className="mx-auto mt-3 max-w-xl text-lg text-gray-600 dark:text-white/65">Pick one small goal and make today’s study time count.</p>
+          <Link to="/practice" className="mt-7 inline-flex items-center gap-2 rounded-full bg-emerald-700 px-6 py-3 font-semibold text-white transition hover:bg-emerald-800 dark:bg-emerald-400 dark:text-black dark:hover:bg-emerald-300">
+            Start practicing <ArrowRight className="h-4 w-4" aria-hidden="true" />
+          </Link>
+        </section>
+      </main>
     </Layout>
   );
 }

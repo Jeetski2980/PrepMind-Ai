@@ -95,6 +95,35 @@
     scroll-behavior: smooth;
   }
 
+  .country-count {
+    font-variant-numeric: tabular-nums;
+    transform-origin: center;
+  }
+
+  .country-count-finished {
+    animation: country-count-pop 620ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
+  }
+
+  @keyframes country-count-pop {
+    0% {
+      transform: scale(1);
+    }
+    48% {
+      transform: scale(1.13);
+      text-shadow: 0 0 22px rgb(5 150 105 / 28%);
+    }
+    100% {
+      transform: scale(1);
+      text-shadow: none;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .country-count-finished {
+      animation: none;
+    }
+  }
+
   /* Radix Select Component Dark Fixes */
   .dark [data-radix-select-content] {
     background-color: #000000 !important;
@@ -991,4 +1020,13 @@
   .dark .explanation-box .katex-display {
     color: #FFFFFF;
   }
+}
+
+/* Keep About page body copy in the green-charcoal palette from its reference. */
+.about-page .flip-front-content p {
+  color: #405b4b;
+}
+
+.dark .about-page .flip-front-content p {
+  color: rgba(209, 250, 229, 0.84);
 }

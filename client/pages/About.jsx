@@ -5,17 +5,18 @@ import Layout from "@/components/Layout.jsx";
 export default function About() {
   return (
     <Layout>
-      <div className="min-h-screen bg-background text-foreground dark:bg-background dark:text-foreground py-12 transition-colors duration-300">
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div className="about-page relative isolate min-h-screen overflow-hidden bg-white py-12 text-[#111916] transition-colors duration-300 dark:bg-black dark:text-white">
+        <div aria-hidden="true" className="pointer-events-none absolute inset-0 -z-10 overflow-hidden">
+          <div className="absolute -right-36 -top-40 h-[30rem] w-[30rem] rounded-full bg-emerald-200/35 blur-3xl dark:bg-emerald-500/10" />
+          <div className="absolute -left-40 top-[42rem] h-[28rem] w-[28rem] rounded-full bg-green-200/25 blur-3xl dark:bg-green-500/10" />
+        </div>
+        <div className="relative mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           {/* Header */}
-          <div className="text-center mb-12">
-            <div className="w-16 h-16 bg-emerald-100 dark:bg-emerald-400/10 rounded-full flex items-center justify-center mx-auto mb-6">
-              <Brain className="w-8 h-8 text-emerald-600 dark:text-emerald-400" />
-            </div>
-            <h1 className="text-4xl font-bold mb-4">{/* Using theme colors */}
-              <span className="text-foreground dark:text-foreground">About PrepMind</span>
+          <div className="mb-12">
+            <h1 className="mb-5 text-5xl font-bold leading-[1.05] tracking-[-0.055em] text-[#111916] dark:text-white sm:text-6xl">
+              About <span className="text-[#20815f] dark:text-emerald-400">PrepMind</span>
             </h1>
-            <p className="text-xl text-muted-foreground dark:text-muted-foreground max-w-3xl mx-auto">
+            <p className="max-w-3xl text-lg leading-8 text-[#405b4b] dark:text-emerald-100/80 sm:text-xl">
               PrepMind is built to help students prepare for SAT, ACT, and AP
               exams with instant practice, clear explanations, and AI-powered
               tutoring—completely free.
@@ -23,19 +24,21 @@ export default function About() {
           </div>
 
           {/* Mission Statement */}
-          <Card className="bg-card dark:bg-card shadow-card dark:shadow-md border border-border dark:border-border rounded-lg mb-12 transition-shadow duration-300">
-            <CardContent className="p-8 text-center">
-              <div className="w-12 h-12 bg-emerald-100 dark:bg-emerald-400/10 rounded-full flex items-center justify-center mx-auto mb-4">
-                <Heart className="w-6 h-6 text-emerald-600 dark:text-emerald-400" />
+          <Card className="mb-12 rounded-[1.75rem] border border-emerald-100 bg-white shadow-[0_18px_55px_-40px_rgba(18,66,45,0.35)] transition-shadow duration-300 dark:border-emerald-400/20 dark:bg-neutral-950">
+            <CardContent className="flex flex-col items-start gap-7 p-7 sm:flex-row sm:items-center sm:gap-12 sm:p-10">
+              <div className="flex h-20 w-20 shrink-0 items-center justify-center rounded-[1.6rem] bg-emerald-50 dark:bg-emerald-400/10">
+                <Heart className="h-9 w-9 text-emerald-700 dark:text-emerald-400" />
               </div>
-              <h2 className="text-2xl font-bold mb-4 text-foreground dark:text-foreground">
-                Our Mission
-              </h2>
-              <p className="text-lg leading-relaxed text-muted-foreground dark:text-muted-foreground">
-                We believe that quality test preparation should be accessible to every student. 
-                PrepMind harnesses the power of AI to provide personalized, effective, and 
-                completely free test prep resources to help students achieve their academic goals.
-              </p>
+              <div>
+                <h2 className="mb-3 text-3xl font-bold tracking-tight text-[#111916] dark:text-white">
+                  Our Mission
+                </h2>
+                <p className="text-base leading-7 text-[#405b4b] dark:text-emerald-100/80">
+                  We believe that quality test preparation should be accessible to every student. 
+                  PrepMind harnesses the power of AI to provide personalized, effective, and 
+                  completely free test prep resources to help students achieve their academic goals.
+                </p>
+              </div>
             </CardContent>
           </Card>
 
@@ -52,8 +55,8 @@ export default function About() {
                 </div>
                 <div className="flip-front">
                   <div className="flip-front-content">
-                    <h3 className="text-xl font-semibold mb-4 text-white">AI-Powered Learning</h3>
-                    <p className="text-gray-300 leading-relaxed">
+                    <h3 className="text-xl font-semibold mb-4 text-[#111916] dark:text-white">AI-Powered Learning</h3>
+                    <p className="leading-relaxed text-[#405b4b] dark:text-emerald-100/80">
                       Our advanced AI generates unlimited practice questions tailored to your needs,
                       with instant feedback and detailed explanations to accelerate your learning.
                     </p>
@@ -73,8 +76,8 @@ export default function About() {
                 </div>
                 <div className="flip-front">
                   <div className="flip-front-content">
-                    <h3 className="text-xl font-semibold mb-4 text-white">Comprehensive Coverage</h3>
-                    <p className="text-gray-300 leading-relaxed">
+                    <h3 className="text-xl font-semibold mb-4 text-[#111916] dark:text-white">Comprehensive Coverage</h3>
+                    <p className="leading-relaxed text-[#405b4b] dark:text-emerald-100/80">
                       From SAT and ACT to 15+ AP subjects, PrepMind covers all major standardized tests
                       with authentic question styles and up-to-date content.
                     </p>
@@ -94,8 +97,8 @@ export default function About() {
                 </div>
                 <div className="flip-front">
                   <div className="flip-front-content">
-                    <h3 className="text-xl font-semibold mb-4 text-white">Platform & Security</h3>
-                    <p className="text-gray-300 leading-relaxed">
+                    <h3 className="text-xl font-semibold mb-4 text-[#111916] dark:text-white">Platform & Security</h3>
+                    <p className="leading-relaxed text-[#405b4b] dark:text-emerald-100/80">
                       The platform is hosted on secure cloud infrastructure with proper SSL certificates and is developed to ensure reliability and safety.
                     </p>
                   </div>
@@ -114,8 +117,8 @@ export default function About() {
                 </div>
                 <div className="flip-front">
                   <div className="flip-front-content">
-                    <h3 className="text-xl font-semibold mb-4 text-white">Student-Focused</h3>
-                    <p className="text-gray-300 leading-relaxed">
+                    <h3 className="text-xl font-semibold mb-4 text-[#111916] dark:text-white">Student-Focused</h3>
+                    <p className="leading-relaxed text-[#405b4b] dark:text-emerald-100/80">
                       Built with purpose and without accounts or databases, PrepMind runs efficiently to stay free for every student, helping provide equal access and opportunity for all learners.
                     </p>
                   </div>
@@ -141,7 +144,7 @@ export default function About() {
                   <h3 className="text-lg font-semibold mb-2 text-foreground dark:text-foreground">
                     Gemini-2.5-Flash
                   </h3>
-                  <p className="text-muted-foreground dark:text-muted-foreground">
+                  <p className="text-[#405b4b] dark:text-emerald-100/80">
                      Google’s fast, efficient AI model optimized for quick reasoning and smart question generation through the Gemini API.
                   </p>
                 </div>
@@ -150,7 +153,7 @@ export default function About() {
                   <h3 className="text-lg font-semibold mb-2 text-foreground dark:text-foreground">
                     Adaptive Learning
                   </h3>
-                  <p className="text-muted-foreground dark:text-muted-foreground">
+                  <p className="text-[#405b4b] dark:text-emerald-100/80">
                     AI continuously learns from your responses to provide increasingly personalized practice sessions.
                   </p>
                 </div>
@@ -159,7 +162,7 @@ export default function About() {
                   <h3 className="text-lg font-semibold mb-2 text-foreground dark:text-foreground">
                     Instant Feedback
                   </h3>
-                  <p className="text-muted-foreground dark:text-muted-foreground">
+                  <p className="text-[#405b4b] dark:text-emerald-100/80">
                     Get immediate explanations and learn from mistakes with detailed step-by-step solutions.
                   </p>
                 </div>
@@ -184,7 +187,7 @@ export default function About() {
                   <h3 className="font-semibold text-xl mb-2 text-foreground dark:text-foreground">
                     Frontend Technology
                   </h3>
-                  <ul className="list-disc list-inside space-y-1 text-muted-foreground dark:text-muted-foreground">
+                  <ul className="list-disc list-inside space-y-1 text-[#405b4b] dark:text-emerald-100/80">
                     <li className="whitespace-nowrap">React.js for dynamic interface.</li>
                     <li className="whitespace-nowrap">Tailwind CSS for utility-first design.</li>
                     <li className="whitespace-nowrap">JavaScript (ES6+).</li>
@@ -210,7 +213,7 @@ export default function About() {
                   <h3 className="font-semibold text-xl mb-2 text-foreground dark:text-foreground">
                     Backend & AI
                   </h3>
-                  <ul className="list-disc list-inside space-y-1 text-muted-foreground dark:text-muted-foreground">
+                  <ul className="list-disc list-inside space-y-1 text-[#405b4b] dark:text-emerald-100/80">
                     <li className="whitespace-nowrap">Node.js backend infrastructure.</li>
                     <li className="whitespace-nowrap">RESTful API design.</li>
                     <li className="whitespace-nowrap">Gemini AI integration.</li>
