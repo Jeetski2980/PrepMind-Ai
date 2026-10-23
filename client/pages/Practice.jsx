@@ -222,7 +222,7 @@ export default function Practice() {
           source = "fallback";
         } catch (fallbackError) {
           console.error("The local question bank could not be loaded:", fallbackError);
-          setError("Question generation is unavailable, and the local backup bank could not be loaded. Check your connection and try again.");
+          setError("Question generation is unavailable. Check your connection and try again.");
           return;
         }
       }
@@ -526,11 +526,6 @@ export default function Practice() {
           ) : (
             /* Quiz Interface */
             <div className="space-y-6">
-              {questionSource === "fallback" && (
-                <div role="status" className="rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-900 dark:border-emerald-400/20 dark:bg-emerald-400/10 dark:text-emerald-200">
-                  Using PrepMind’s local backup question bank.
-                </div>
-              )}
               {!showResults ? (
                 <section className="rounded-[1.75rem] bg-white p-4 shadow-2xl shadow-emerald-950/[0.08] dark:bg-[#0b110d] sm:p-6">
                   <div className="flex items-center justify-between gap-4">
