@@ -1,5 +1,6 @@
 import { useEffect } from "react";
 import { Link } from "react-router-dom";
+import { InlineMath } from "react-katex";
 import {
   ArrowRight,
   BookOpen,
@@ -14,14 +15,25 @@ export default function Index() {
     const obj = document.getElementById("countryCount");
     if (!obj) return undefined;
 
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+      obj.textContent = "21";
+      return undefined;
+    }
+
     let startTimestamp = null;
     let animationFrameId = null;
     const animateValue = (target, start, end, duration) => {
       const step = (timestamp) => {
         if (!startTimestamp) startTimestamp = timestamp;
         const progress = Math.min((timestamp - startTimestamp) / duration, 1);
-        target.textContent = Math.floor(progress * (end - start) + start);
-        if (progress < 1) animationFrameId = window.requestAnimationFrame(step);
+        const easedProgress = 1 - Math.pow(1 - progress, 4);
+        target.textContent = String(Math.floor(easedProgress * (end - start) + start));
+        if (progress < 1) {
+          animationFrameId = window.requestAnimationFrame(step);
+        } else {
+          target.textContent = String(end);
+          target.classList.add("country-count-finished");
+        }
       };
       animationFrameId = window.requestAnimationFrame(step);
     };
@@ -70,9 +82,9 @@ export default function Index() {
                 </Link>
               </div>
 
-              <p className="mt-9 text-base font-medium text-gray-600 dark:text-white/70 sm:text-lg">
+              <p className="mt-9 max-w-2xl text-[1.625rem] font-semibold leading-snug tracking-tight text-gray-950 dark:text-white md:text-[1.95rem]">
                 Trusted by students in over{" "}
-                <span id="countryCount" className="font-bold text-emerald-700 dark:text-emerald-400">
+                <span id="countryCount" className="country-count mx-1 inline-block align-baseline text-5xl font-extrabold leading-none text-emerald-700 dark:text-emerald-400 sm:text-6xl">
                   0
                 </span>{" "}
                 countries
@@ -81,8 +93,8 @@ export default function Index() {
 
             <div className="relative mx-auto w-full max-w-xl lg:ml-auto">
               <div className="absolute -inset-4 rounded-[2rem] bg-emerald-500/10 blur-2xl" />
-              <div className="relative overflow-hidden rounded-[1.75rem] border border-gray-200 bg-white p-4 shadow-2xl shadow-emerald-950/10 dark:border-white/10 dark:bg-[#0b110d] sm:p-6">
-                <div className="flex items-center justify-between border-b border-gray-100 pb-4 dark:border-white/10">
+              <div className="relative overflow-hidden rounded-[1.75rem] border border-gray-200/35 bg-white p-4 shadow-2xl shadow-emerald-950/10 dark:border-white/[0.05] dark:bg-[#0b110d] sm:p-6">
+                <div className="flex items-center justify-between border-b border-gray-200/30 pb-4 dark:border-white/[0.05]">
                   <div className="flex items-center gap-3">
                     <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-100 text-emerald-800 dark:bg-emerald-400/15 dark:text-emerald-300">
                       <BookOpen className="h-5 w-5" aria-hidden="true" />
@@ -96,28 +108,28 @@ export default function Index() {
                       </p>
                     </div>
                   </div>
-                  <span className="rounded-full bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-800 dark:bg-emerald-400/10 dark:text-emerald-300">
-                    SAT · MATH
+                  <span className="rounded-full border border-emerald-900/[0.04] bg-emerald-50/75 px-3 py-1 text-xs font-semibold text-emerald-800 dark:border-white/[0.04] dark:bg-emerald-400/[0.06] dark:text-emerald-300">
+                    AP CALCULUS AB
                   </span>
                 </div>
 
                 <div className="px-1 py-6 sm:px-2">
                   <div className="mb-4 flex items-center justify-between text-xs font-medium text-gray-500 dark:text-white/50">
                     <span>QUESTION 2</span>
-                    <span>ALGEBRA</span>
+                    <span>LIMITS</span>
                   </div>
                   <h2 className="text-xl font-semibold leading-7 text-gray-950 dark:text-white sm:text-2xl">
-                    If 3x + 5 = 20, what is the value of x?
+                    What is <InlineMath math="\\lim_{x \\to 2} \\frac{x^2 - 4}{x - 2}" />?
                   </h2>
 
                   <div className="mt-6 space-y-3" role="img" aria-label="Static example showing answer B selected">
                     <div className="flex items-center gap-3 rounded-2xl border border-gray-200 px-4 py-3 text-gray-700 dark:border-white/10 dark:text-white/75">
                       <span className="flex h-8 w-8 items-center justify-center rounded-full border border-gray-300 text-sm font-semibold dark:border-white/25">A</span>
-                      <span>x = 3</span>
+                      <span>0</span>
                     </div>
                     <div className="relative flex items-center gap-3 rounded-2xl border-2 border-emerald-600 bg-emerald-50 px-4 py-3 text-gray-950 shadow-sm dark:border-emerald-400 dark:bg-emerald-400/10 dark:text-white">
                       <span className="flex h-8 w-8 items-center justify-center rounded-full bg-emerald-700 text-sm font-bold text-white dark:bg-emerald-400 dark:text-black">B</span>
-                      <span className="font-semibold">x = 5</span>
+                      <span className="font-semibold">4</span>
                       <span className="ml-auto inline-flex items-center gap-1 text-xs font-semibold text-emerald-800 dark:text-emerald-300">
                         <CheckCircle2 className="h-4 w-4" aria-hidden="true" /> Selected
                       </span>
@@ -131,26 +143,19 @@ export default function Index() {
                     </div>
                     <div className="flex items-center gap-3 rounded-2xl border border-gray-200 px-4 py-3 text-gray-700 dark:border-white/10 dark:text-white/75">
                       <span className="flex h-8 w-8 items-center justify-center rounded-full border border-gray-300 text-sm font-semibold dark:border-white/25">C</span>
-                      <span>x = 7</span>
+                      <span>2</span>
                     </div>
                     <div className="flex items-center gap-3 rounded-2xl border border-gray-200 px-4 py-3 text-gray-700 dark:border-white/10 dark:text-white/75">
                       <span className="flex h-8 w-8 items-center justify-center rounded-full border border-gray-300 text-sm font-semibold dark:border-white/25">D</span>
-                      <span>x = 15</span>
+                      <span>The limit does not exist</span>
                     </div>
                   </div>
                 </div>
 
-                <div className="flex items-center justify-between border-t border-gray-100 pt-4 dark:border-white/10">
+                <div className="flex items-center justify-between border-t border-gray-200/30 pt-4 dark:border-white/[0.05]">
                   <span className="text-xs text-gray-500 dark:text-white/50">Example only · not an active quiz</span>
-                  <span className="rounded-full bg-gray-100 px-3 py-1.5 text-xs font-medium text-gray-700 dark:bg-white/10 dark:text-white/70">2 of 10</span>
+                  <span className="rounded-full border border-gray-400/[0.04] bg-gray-100/70 px-3 py-1.5 text-xs font-medium text-gray-700 dark:border-white/[0.04] dark:bg-white/[0.05] dark:text-white/70">2/10</span>
                 </div>
-              </div>
-              <div className="absolute -bottom-5 -left-3 hidden rounded-2xl border border-gray-200 bg-white px-4 py-3 shadow-xl dark:border-white/10 dark:bg-[#111a14] sm:block">
-                <div className="flex items-center gap-2 text-sm font-semibold text-gray-900 dark:text-white">
-                  <CheckCircle2 className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
-                  Nice work
-                </div>
-                <p className="mt-1 text-xs text-gray-500 dark:text-white/50">One step at a time.</p>
               </div>
             </div>
           </div>
