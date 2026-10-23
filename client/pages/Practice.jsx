@@ -1,4 +1,5 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -40,8 +41,7 @@ function restorePracticeSession(value) {
           Number.isInteger(answerIndex) && answerIndex >= 0 && answerIndex < questions[qIndex].choices.length;
       })
   );
-  const isComplete = questions.every((_question, index) => Number.isInteger(selectedAnswers[index]));
-  const showResults = Boolean(value.showResults) && isComplete;
+  const showResults = Boolean(value.showResults);
   const calculatedScore = calculatePracticeScore(questions, selectedAnswers);
 
   return {
@@ -126,7 +126,23 @@ export default function Practice() {
   const [isGenerating, setIsGenerating] = useState(false);
   const [generatingExplanationIndex, setGeneratingExplanationIndex] = useState(null);
   const [explanationErrors, setExplanationErrors] = useState({});
+  const [showIncompleteSubmitConfirmation, setShowIncompleteSubmitConfirmation] = useState(false);
+  const cancelIncompleteSubmitRef = useRef(null);
   const [error, setError] = useState("");
+
+  useEffect(() => {
+    if (!showIncompleteSubmitConfirmation) return undefined;
+    const previouslyFocused = document.activeElement;
+    cancelIncompleteSubmitRef.current?.focus();
+    const handleKeyDown = (event) => {
+      if (event.key === "Escape") setShowIncompleteSubmitConfirmation(false);
+    };
+    document.addEventListener("keydown", handleKeyDown);
+    return () => {
+      document.removeEventListener("keydown", handleKeyDown);
+      if (previouslyFocused instanceof HTMLElement) previouslyFocused.focus();
+    };
+  }, [showIncompleteSubmitConfirmation]);
 
   useEffect(() => {
     let isActive = true;
@@ -309,8 +325,18 @@ export default function Practice() {
 
   const submitAnswers = () => {
     if (!isPracticeReady) return;
+    const unansweredCount = questions.filter((_question, index) => !Number.isInteger(selectedAnswers[index])).length;
+    if (unansweredCount > 0) {
+      setShowIncompleteSubmitConfirmation(true);
+      return;
+    }
+    finishSubmittingAnswers();
+  };
+
+  const finishSubmittingAnswers = () => {
     setScore(calculatePracticeScore(questions, selectedAnswers));
     setShowResults(true);
+    setShowIncompleteSubmitConfirmation(false);
   };
 
   const resetQuiz = () => {
@@ -323,6 +349,8 @@ export default function Practice() {
   };
 
   const calculateScore = () => score ?? calculatePracticeScore(questions, selectedAnswers);
+  const answeredCount = questions.filter((_question, index) => Number.isInteger(selectedAnswers[index])).length;
+  const unansweredCount = questions.length - answeredCount;
 
   return (
     <Layout>
@@ -612,7 +640,6 @@ export default function Practice() {
                       {currentQuestion === questions.length - 1 ? (
                         <Button
                           onClick={submitAnswers}
-                          disabled={Object.keys(selectedAnswers).length !== questions.length}
                           className="min-h-10 rounded-full bg-emerald-700 px-5 text-white hover:bg-emerald-800 disabled:opacity-50 dark:bg-emerald-400 dark:text-black dark:hover:bg-emerald-300"
                         >
                           Submit Answers
@@ -635,9 +662,15 @@ export default function Practice() {
                 <div className="space-y-6">
                   <Card className="bg-white dark:bg-black border dark:border-white/20">
                     <CardHeader className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-                      <CardTitle className="text-center text-gray-900 dark:text-white sm:text-left">
-                        Quiz Complete! Your Score: {calculateScore()}%
-                      </CardTitle>
+                      <div className="space-y-1 text-center sm:text-left">
+                        <CardTitle className="text-gray-900 dark:text-white">
+                          Quiz Complete! Your Score: {calculateScore()}%
+                        </CardTitle>
+                        <p className="text-sm text-gray-600 dark:text-white/65">
+                          {answeredCount} of {questions.length} questions answered.
+                          {unansweredCount > 0 && " Unanswered questions counted as incorrect."}
+                        </p>
+                      </div>
                       <Button
                         type="button"
                         onClick={resetQuiz}
@@ -661,7 +694,11 @@ export default function Practice() {
                             <h3 className="font-semibold text-gray-900 dark:text-white">
                               Question {qIndex + 1}
                             </h3>
-                            {selectedAnswers[qIndex] === correctIdx ? (
+                            {!Number.isInteger(selectedAnswers[qIndex]) ? (
+                              <span className="rounded-full bg-gray-100 px-3 py-1 text-sm font-medium text-gray-600 dark:bg-white/10 dark:text-white/70">
+                                Not answered
+                              </span>
+                            ) : selectedAnswers[qIndex] === correctIdx ? (
                               <CheckCircle className="w-6 h-6 text-green-500" />
                             ) : (
                               <XCircle className="w-6 h-6 text-red-500" />
@@ -746,6 +783,51 @@ export default function Practice() {
           )}
         </div>
       </div>
+      {showIncompleteSubmitConfirmation && createPortal(
+        <div
+          className="fixed inset-0 z-[100] flex items-center justify-center bg-gray-950/45 p-4 backdrop-blur-sm"
+          onMouseDown={(event) => {
+            if (event.target === event.currentTarget) setShowIncompleteSubmitConfirmation(false);
+          }}
+        >
+          <section
+            role="alertdialog"
+            aria-modal="true"
+            aria-labelledby="incomplete-submit-title"
+            aria-describedby="incomplete-submit-description"
+            className="w-full max-w-md rounded-3xl border border-emerald-100 bg-white p-6 shadow-2xl dark:border-white/10 dark:bg-gray-950 sm:p-7"
+          >
+            <div className="mb-4 flex h-11 w-11 items-center justify-center rounded-2xl bg-emerald-100 text-emerald-800 dark:bg-emerald-400/15 dark:text-emerald-300">
+              <BookOpen className="h-5 w-5" aria-hidden="true" />
+            </div>
+            <h2 id="incomplete-submit-title" className="text-xl font-bold text-gray-950 dark:text-white">
+              Submit your practice set?
+            </h2>
+            <p id="incomplete-submit-description" className="mt-2 leading-6 text-gray-600 dark:text-white/70">
+              You left {unansweredCount} {unansweredCount === 1 ? "question" : "questions"} unanswered. If you submit now, they’ll count as incorrect.
+            </p>
+            <div className="mt-6 flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
+              <Button
+                ref={cancelIncompleteSubmitRef}
+                type="button"
+                variant="outline"
+                onClick={() => setShowIncompleteSubmitConfirmation(false)}
+                className="rounded-full border-gray-300 bg-white px-5 text-gray-800 dark:border-white/20 dark:bg-white/[0.03] dark:text-white"
+              >
+                Keep working
+              </Button>
+              <Button
+                type="button"
+                onClick={finishSubmittingAnswers}
+                className="rounded-full bg-emerald-700 px-5 text-white hover:bg-emerald-800 dark:bg-emerald-400 dark:text-black dark:hover:bg-emerald-300"
+              >
+                Submit anyway
+              </Button>
+            </div>
+          </section>
+        </div>,
+        document.body
+      )}
     </Layout>
   );
 }
