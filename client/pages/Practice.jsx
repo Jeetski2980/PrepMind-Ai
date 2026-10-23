@@ -8,6 +8,8 @@ import { BookOpen, CheckCircle, XCircle, Lightbulb, RotateCcw } from "lucide-rea
 import Layout from "@/components/Layout.jsx";
 import { renderTextWithMath } from "@/lib/math-rendering.jsx";
 import { deleteLocalRecord, readLocalRecord, writeLocalRecord } from "@/lib/local-persistence.js";
+import { TEST_SUBJECTS, TOPIC_OPTIONS, SUPPORTED_FALLBACK_TESTS } from "@/data/practice-catalog.js";
+import { getFallbackQuestions } from "@/lib/fallback-question-bank.js";
 
 const PRACTICE_SESSION_KEY = "active-practice-session";
 
@@ -55,59 +57,10 @@ function restorePracticeSession(value) {
       : 0,
     selectedAnswers,
     showResults,
+    questionSource: value.questionSource === "fallback" ? "fallback" : "ai",
     score: showResults && Number.isFinite(value.score) ? value.score : showResults ? calculatedScore : null,
   };
 }
-
-// defines all exams and their subjects for dropdown selection
-
-const TEST_SUBJECTS = {
-  SAT: ["Math", "Reading and Writing"],
-  ACT: ["Math", "Reading", "English", "Science (Optional)"],
-  "AP Exams": [
-    "AP Calculus AB",
-    "AP Calculus BC",
-    "AP Statistics",
-    "AP Physics 1: Algebra-Based",
-    "AP Physics 2: Algebra-Based",
-    "AP Physics C: Mechanics",
-    "AP Physics C: Electricity and Magnetism",
-    "AP Chemistry",
-    "AP Biology",
-    "AP English Language and Composition",
-    "AP English Literature and Composition",
-    "AP United States History",
-    "AP World History: Modern",
-    "AP United States Government and Politics",
-    "AP Psychology",
-    "AP Computer Science A",
-  ],
-};
-// maps each subject to its list of topics for filtering or practice selection
-const TOPIC_OPTIONS = {
-  Math: ["Algebra", "Geometry", "Trigonometry", "Statistics", "Functions"],
-  "Reading and Writing": ["Information and Ideas", "Craft and Structure", "Expression of Ideas", "Standard English Conventions"],
-  Reading: ["Reading Comprehension", "Vocabulary", "Main Ideas", "Inferences"],
-  English: ["Grammar", "Punctuation", "Style", "Strategy"],
-  "Science (Optional)": ["Data Analysis", "Scientific Reasoning", "Research Summaries"],
-  // AP
-  "AP Calculus AB": ["Limits", "Derivatives", "Integrals", "Applications"],
-  "AP Calculus BC": ["Series", "Parametric Equations", "Polar Coordinates", "Advanced Integration"],
-  "AP Statistics": ["Probability", "Sampling", "Inference", "Regression"],
-  "AP Physics 1: Algebra-Based": ["Kinematics", "Forces", "Energy", "Waves"],
-  "AP Physics 2: Algebra-Based": ["Fluid Mechanics", "Thermodynamics", "Electrostatics", "Magnetism"],
-  "AP Physics C: Mechanics": ["Kinematics", "Forces", "Energy", "Momentum"],
-  "AP Physics C: Electricity and Magnetism": ["Electrostatics", "Conductors and Capacitors", "Electric Circuits", "Magnetic Fields"],
-  "AP Chemistry": ["Atomic Structure", "Chemical Bonding", "Reactions", "Thermodynamics"],
-  "AP Biology": ["Cell Biology", "Genetics", "Evolution", "Ecology"],
-  "AP English Language and Composition": ["Rhetorical Analysis", "Synthesis", "Argument Writing", "Language Use"],
-  "AP English Literature and Composition": ["Poetry Analysis", "Prose Analysis", "Literary Devices", "Thematic Analysis"],
-  "AP United States History": ["Colonial Period", "Revolutionary Era", "Civil War", "Modern America"],
-  "AP World History: Modern": ["The Global Tapestry", "Networks of Exchange", "Land-Based Empires", "Globalization"],
-  "AP United States Government and Politics": ["Constitutional Principles", "Political Institutions", "Civil Rights", "Public Policy"],
-  "AP Psychology": ["Biological Bases", "Sensation and Perception", "Learning", "Cognition"],
-  "AP Computer Science A": ["Object-Oriented Programming", "Data Structures", "Algorithms", "Program Design"],
-};
 
 /* ---------- Page ---------- */
 
@@ -122,6 +75,7 @@ export default function Practice() {
   const [selectedAnswers, setSelectedAnswers] = useState({});
   const [showResults, setShowResults] = useState(false);
   const [score, setScore] = useState(null);
+  const [questionSource, setQuestionSource] = useState("ai");
   const [isPracticeReady, setIsPracticeReady] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
   const [generatingExplanationIndex, setGeneratingExplanationIndex] = useState(null);
@@ -158,6 +112,7 @@ export default function Practice() {
       setCurrentQuestion(restored.currentQuestion);
       setSelectedAnswers(restored.selectedAnswers);
       setShowResults(restored.showResults);
+      setQuestionSource(restored.questionSource);
       setScore(restored.score);
     }).finally(() => {
       if (isActive) setIsPracticeReady(true);
@@ -183,9 +138,10 @@ export default function Practice() {
       currentQuestion,
       selectedAnswers,
       showResults,
+      questionSource,
       score: showResults ? (score ?? calculatePracticeScore(questions, selectedAnswers)) : null,
     });
-  }, [isPracticeReady, testType, subject, topic, numQuestions, questions, currentQuestion, selectedAnswers, showResults, score]);
+  }, [isPracticeReady, testType, subject, topic, numQuestions, questions, currentQuestion, selectedAnswers, showResults, questionSource, score]);
 
   const availableSubjects = testType ? TEST_SUBJECTS[testType] || [] : [];
   const availableTopics = subject ? TOPIC_OPTIONS[subject] || [] : [];
@@ -202,75 +158,99 @@ export default function Practice() {
     setIsGenerating(true);
     setError("");
 
+    const safeNum = Math.min(15, Math.max(1, parseInt(numQuestions, 10) || 5));
+    let normalized = [];
+    let source = "ai";
+
     try {
+      let apiError = null;
       const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 90000);
+      const timeoutId = setTimeout(() => controller.abort(), 35000);
+      try {
+        const response = await fetch("/api/generate-questions", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ testType, subject, topic: topic || "General", numQuestions: safeNum }),
+          signal: controller.signal,
+        });
 
-      // clamp to max 15
-      const safeNum = Math.min(15, Math.max(1, parseInt(numQuestions, 10) || 5));
+        if (!response.ok) {
+          let message = "Question generation is temporarily unavailable.";
+          try { message = (await response.json())?.error || message; } catch {}
+          throw new Error(message);
+        }
 
-      const res = await fetch("/api/generate-questions", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          testType,
-          subject,
-          topic: topic || "General",
-          numQuestions: safeNum,
-        }),
-        signal: controller.signal,
-      });
+        const data = await response.json();
+        const letterToIndex = { A: 0, B: 1, C: 2, D: 3 };
+        normalized = (data?.questions || []).map((question) => {
+          const answerIndex = Number.isInteger(question?.answerIndex)
+            ? question.answerIndex
+            : Number.isInteger(question?.correctIndex)
+            ? question.correctIndex
+            : letterToIndex[(question?.answer || "").toUpperCase()] ?? 0;
+          return { ...question, answerIndex, correctIndex: answerIndex, choices: question?.choices || [] };
+        });
 
-      clearTimeout(timeoutId);
-
-      if (!res.ok) {
-        let msg = "Failed to generate questions. Please try again.";
-        try { msg = (await res.json())?.error || msg; } catch {}
-        setError(msg);
-        setIsGenerating(false);
-        return;
+        const completeSet = normalized.length >= safeNum && normalized.every((question) =>
+          typeof question?.question === "string" && question.question.trim() &&
+          Array.isArray(question.choices) && question.choices.length === 4 &&
+          question.choices.every((choice) => typeof choice === "string") &&
+          Number.isInteger(question.answerIndex) && question.answerIndex >= 0 && question.answerIndex < 4
+        );
+        if (!completeSet) throw new Error("The question generator returned an incomplete set.");
+        normalized = normalized.slice(0, safeNum);
+      } catch (requestError) {
+        apiError = requestError;
+      } finally {
+        clearTimeout(timeoutId);
       }
 
-      const data = await res.json();
+      if (apiError) {
+        console.warn("Question generation failed; trying the local question bank.", apiError);
+        if (!SUPPORTED_FALLBACK_TESTS.has(testType)) {
+          const message = apiError.name === "AbortError"
+            ? "AI is taking a while. Try again or reduce the number of questions."
+            : apiError.message === "Failed to fetch"
+            ? "Network error. Please check your connection and try again."
+            : apiError.message || "Question generation failed. Please try again.";
+          setError(message);
+          return;
+        }
 
-      const letterToIndex = { A: 0, B: 1, C: 2, D: 3 };
-      const normalized = (data?.questions || []).map((q) => {
-        const idx =
-          Number.isInteger(q?.answerIndex)
-            ? q.answerIndex
-            : Number.isInteger(q?.correctIndex)
-            ? q.correctIndex
-            : letterToIndex[(q?.answer || "").toUpperCase()] ?? 0;
-        return { ...q, answerIndex: idx, correctIndex: idx, choices: q.choices || [] };
-      });
-
-      if (normalized.length === 0) {
-        setError("No questions were generated. Please try again.");
-        setIsGenerating(false);
-        return;
+        try {
+          normalized = await getFallbackQuestions({ testType, subject, topic: topic || "General", count: safeNum });
+          source = "fallback";
+        } catch (fallbackError) {
+          console.error("The local question bank could not be loaded:", fallbackError);
+          setError("Question generation is unavailable, and the local backup bank could not be loaded. Check your connection and try again.");
+          return;
+        }
       }
 
       setQuestions(normalized);
+      setQuestionSource(source);
       setCurrentQuestion(0);
       setSelectedAnswers({});
       setShowResults(false);
       setScore(null);
-    } catch (e) {
-      if (e.name === "AbortError") {
-        setError("AI is taking a while. Try again or reduce the number of questions.");
-      } else if (String(e.message || "").includes("Failed to fetch")) {
-        setError("Network error. Please check your connection and try again.");
-      } else {
-        setError("Error generating questions. Please try again.");
-      }
-      console.error("Error generating questions:", e);
+      setError("");
+    } catch (generationError) {
+      console.error("Error building questions:", generationError);
+      setError("Could not build a practice set. Please try again.");
+    } finally {
+      setIsGenerating(false);
     }
-
-    setIsGenerating(false);
   }
 
   async function generateMoreExplanation(question, questionIndex) {
     if (question.moreExplanation || generatingExplanationIndex !== null) return;
+    if (question.source === "fallback" && question.extendedExplanation) {
+      setExplanationErrors((previous) => ({ ...previous, [questionIndex]: "" }));
+      setQuestions((previous) => previous.map((item, index) =>
+        index === questionIndex ? { ...item, moreExplanation: question.extendedExplanation } : item
+      ));
+      return;
+    }
     setGeneratingExplanationIndex(questionIndex);
     setExplanationErrors((previous) => ({ ...previous, [questionIndex]: "" }));
 
@@ -341,6 +321,7 @@ export default function Practice() {
 
   const resetQuiz = () => {
     setQuestions([]);
+    setQuestionSource("ai");
     setCurrentQuestion(0);
     setSelectedAnswers({});
     setShowResults(false);
@@ -351,6 +332,7 @@ export default function Practice() {
   const calculateScore = () => score ?? calculatePracticeScore(questions, selectedAnswers);
   const answeredCount = questions.filter((_question, index) => Number.isInteger(selectedAnswers[index])).length;
   const unansweredCount = questions.length - answeredCount;
+  const activeTopic = topic || questions[currentQuestion]?.topic || "";
 
   return (
     <Layout>
@@ -544,6 +526,11 @@ export default function Practice() {
           ) : (
             /* Quiz Interface */
             <div className="space-y-6">
+              {questionSource === "fallback" && (
+                <div role="status" className="rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-900 dark:border-emerald-400/20 dark:bg-emerald-400/10 dark:text-emerald-200">
+                  Using PrepMind’s local backup question bank.
+                </div>
+              )}
               {!showResults ? (
                 <section className="rounded-[1.75rem] bg-white p-4 shadow-2xl shadow-emerald-950/[0.08] dark:bg-[#0b110d] sm:p-6">
                   <div className="flex items-center justify-between gap-4">
@@ -577,7 +564,7 @@ export default function Practice() {
                         {subject}
                         <span className="px-1 text-emerald-700 dark:text-emerald-400">·</span>
                         Question {currentQuestion + 1}
-                        {topic && <><span className="px-1 text-emerald-700 dark:text-emerald-400">·</span>{topic}</>}
+                        {activeTopic && <><span className="px-1 text-emerald-700 dark:text-emerald-400">·</span>{activeTopic}</>}
                       </p>
                       <Badge variant="outline" className="shrink-0 border-gray-300 text-gray-600 dark:border-white/20 dark:text-white/65">
                         {questions[currentQuestion]?.difficulty || "Medium"}
