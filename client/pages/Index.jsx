@@ -59,7 +59,7 @@ export default function Index() {
                 Powered by Google Gemini AI
               </div>
 
-              <h1 className="max-w-2xl text-5xl font-bold leading-[1.04] tracking-tight sm:text-6xl lg:text-7xl">
+              <h1 className="max-w-2xl text-[3.125rem] font-bold leading-[1.04] tracking-tight sm:text-[4.125rem] lg:text-[5rem]">
                 Prep smarter,
                 <br />
                 <span className="text-emerald-700 dark:text-emerald-400">not harder.</span>
@@ -86,7 +86,7 @@ export default function Index() {
 
               <p className="mt-9 max-w-2xl text-[1.625rem] font-semibold leading-snug tracking-tight text-gray-950 dark:text-white md:text-[1.95rem]">
                 Trusted by students in over{" "}
-                <span id="countryCount" className="country-count mx-1 inline-block align-baseline text-5xl font-extrabold leading-none text-emerald-700 dark:text-emerald-400 sm:text-6xl">
+                <span id="countryCount" className="country-count mx-1 inline-block align-baseline text-[2.75rem] font-extrabold leading-none text-emerald-700 dark:text-emerald-400 sm:text-[3.25rem]">
                   0
                 </span>{" "}
                 countries
@@ -208,14 +208,14 @@ export default function Index() {
           <div className="mx-auto max-w-5xl px-4 text-center sm:px-6 lg:px-8">
             <p className="text-sm font-semibold uppercase tracking-[0.16em] text-emerald-100">Made for students</p>
             <h2 className="mt-3 text-3xl font-bold tracking-tight sm:text-4xl">Built by students, for students</h2>
-            <div className="mx-auto mt-9 grid max-w-3xl gap-4 sm:grid-cols-3">
-              <div className="rounded-2xl border border-white/15 bg-white/10 p-5">
+            <div className="mx-auto mt-9 grid max-w-3xl gap-6 sm:grid-cols-3">
+              <div>
                 <p className="text-3xl font-bold">3+</p><p className="mt-1 text-sm text-white/80">Exam types</p>
               </div>
-              <div className="rounded-2xl border border-white/15 bg-white/10 p-5">
+              <div>
                 <p className="text-3xl font-bold">∞</p><p className="mt-1 text-sm text-white/80">Practice questions</p>
               </div>
-              <div className="rounded-2xl border border-white/15 bg-white/10 p-5">
+              <div>
                 <p className="text-3xl font-bold">24/7</p><p className="mt-1 text-sm text-white/80">Tutor access</p>
               </div>
             </div>
