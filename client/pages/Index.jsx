@@ -93,44 +93,48 @@ export default function Index() {
               </p>
             </div>
 
-            <div className="relative mx-auto w-full max-w-xl lg:ml-auto">
-              <div className="absolute -inset-4 rounded-[2rem] bg-emerald-500/10 blur-2xl" />
-              <div className="relative overflow-hidden rounded-[1.75rem] border border-gray-200/35 bg-white p-4 shadow-2xl shadow-emerald-950/10 dark:border-white/[0.05] dark:bg-[#0b110d] sm:p-6">
-                <div className="flex items-center justify-between border-b border-gray-200/30 pb-4 dark:border-white/[0.05]">
-                  <div className="flex items-center gap-3">
-                    <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-100 text-emerald-800 dark:bg-emerald-400/15 dark:text-emerald-300">
-                      <BookOpen className="h-5 w-5" aria-hidden="true" />
-                    </div>
-                    <div>
-                      <p className="text-sm font-semibold tracking-wide text-gray-900 dark:text-white">
-                        PRACTICE SESSION
-                      </p>
-                      <p className="mt-0.5 text-xs text-gray-500 dark:text-white/50">
-                        A quick look inside PrepMind
-                      </p>
-                    </div>
-                  </div>
-                  <span className="rounded-full bg-emerald-50/75 px-3 py-1 text-xs font-semibold text-emerald-800 dark:bg-emerald-400/[0.06] dark:text-emerald-300">
-                    AP CALCULUS AB
+            <div className="mx-auto w-full max-w-xl lg:ml-auto">
+              <div className="rounded-[1.75rem] bg-white p-4 shadow-2xl shadow-emerald-950/[0.08] dark:bg-[#0b110d] sm:p-6">
+                <div className="flex items-center justify-between gap-4">
+                  <p className="text-xs font-bold uppercase tracking-[0.14em] text-gray-800 dark:text-white/80 sm:text-sm">
+                    Practice Session
+                  </p>
+                  <span className="inline-flex shrink-0 items-center gap-2 text-[0.7rem] font-semibold uppercase tracking-[0.12em] text-gray-600 dark:text-white/65 sm:text-xs">
+                    <span className="h-2 w-2 rounded-full bg-emerald-600 ring-4 ring-emerald-100 dark:bg-emerald-400 dark:ring-emerald-400/15" />
+                    In Progress
                   </span>
                 </div>
 
-                <div className="px-1 py-6 sm:px-2">
-                  <div className="mb-4 flex items-center justify-between text-xs font-medium text-gray-500 dark:text-white/50">
-                    <span>QUESTION 2</span>
-                    <span>LIMITS</span>
-                  </div>
-                  <h2 className="text-xl font-semibold leading-7 text-gray-950 dark:text-white sm:text-2xl">
+                <div
+                  className="mt-4 h-1.5 overflow-hidden rounded-full bg-gray-100 dark:bg-white/10"
+                  role="progressbar"
+                  aria-label="Practice session progress"
+                  aria-valuemin={0}
+                  aria-valuemax={10}
+                  aria-valuenow={2}
+                >
+                  <div className="h-full w-1/5 rounded-full bg-emerald-600 dark:bg-emerald-400" />
+                </div>
+
+                <div
+                  className="mt-6 rounded-2xl bg-gray-50 p-4 dark:bg-white/[0.04] sm:p-5"
+                  role="img"
+                  aria-label="AP Calculus AB practice question 2 about limits. What is the limit as x approaches 2 of x squared minus 4 over x minus 2? Answer B, 4, is selected."
+                >
+                  <p className="text-[0.68rem] font-bold uppercase tracking-[0.13em] text-gray-500 dark:text-white/50 sm:text-xs">
+                    AP Calculus AB <span className="px-1 text-emerald-700 dark:text-emerald-400">·</span> Question 2 <span className="px-1 text-emerald-700 dark:text-emerald-400">·</span> Limits
+                  </p>
+                  <h2 className="mt-3 text-lg font-semibold leading-7 text-gray-950 dark:text-white sm:text-2xl">
                     What is <InlineMath math={DEMO_LIMIT_MATH} />?
                   </h2>
 
-                  <div className="mt-6 space-y-3" role="img" aria-label="Static example showing answer B selected">
-                    <div className="flex items-center gap-3 rounded-2xl border border-gray-200 px-4 py-3 text-gray-700 dark:border-white/10 dark:text-white/75">
-                      <span className="flex h-8 w-8 items-center justify-center rounded-full border border-gray-300 text-sm font-semibold dark:border-white/25">A</span>
+                  <div className="mt-5 space-y-2.5">
+                    <div className="flex items-center gap-3 rounded-xl border border-gray-200/70 bg-white/80 px-3 py-2.5 text-gray-700 dark:border-white/10 dark:bg-white/[0.02] dark:text-white/75">
+                      <span className="flex h-7 w-7 items-center justify-center rounded-lg border border-gray-300/80 text-xs font-semibold dark:border-white/20">A</span>
                       <span>0</span>
                     </div>
-                    <div className="relative flex items-center gap-3 rounded-2xl border-2 border-emerald-600 bg-emerald-50 px-4 py-3 text-gray-950 shadow-sm dark:border-emerald-400 dark:bg-emerald-400/10 dark:text-white">
-                      <span className="flex h-8 w-8 items-center justify-center rounded-full bg-emerald-700 text-sm font-bold text-white dark:bg-emerald-400 dark:text-black">B</span>
+                    <div className="relative flex items-center gap-3 rounded-xl border border-emerald-600/80 bg-emerald-50 px-3 py-2.5 text-gray-950 shadow-sm dark:border-emerald-400/80 dark:bg-emerald-400/10 dark:text-white">
+                      <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-emerald-700 text-xs font-bold text-white dark:bg-emerald-400 dark:text-black">B</span>
                       <span className="font-semibold">4</span>
                       <span className="ml-auto inline-flex items-center gap-1 text-xs font-semibold text-emerald-800 dark:text-emerald-300">
                         <CheckCircle2 className="h-4 w-4" aria-hidden="true" /> Selected
@@ -138,25 +142,30 @@ export default function Index() {
                       <svg
                         aria-hidden="true"
                         viewBox="0 0 24 24"
-                        className="pointer-events-none absolute -bottom-3 right-7 z-10 h-8 w-8 drop-shadow-md"
+                        className="pointer-events-none absolute -bottom-2 right-7 z-10 h-8 w-8 drop-shadow-md"
                       >
                         <path d="M5 2.5v16l4.4-4.3 3.1 6.2 2.4-1.2-3-6.1 6-.3L5 2.5Z" fill="white" stroke="#0b110d" strokeWidth="1.5" strokeLinejoin="round" />
                       </svg>
                     </div>
-                    <div className="flex items-center gap-3 rounded-2xl border border-gray-200 px-4 py-3 text-gray-700 dark:border-white/10 dark:text-white/75">
-                      <span className="flex h-8 w-8 items-center justify-center rounded-full border border-gray-300 text-sm font-semibold dark:border-white/25">C</span>
+                    <div className="flex items-center gap-3 rounded-xl border border-gray-200/70 bg-white/80 px-3 py-2.5 text-gray-700 dark:border-white/10 dark:bg-white/[0.02] dark:text-white/75">
+                      <span className="flex h-7 w-7 items-center justify-center rounded-lg border border-gray-300/80 text-xs font-semibold dark:border-white/20">C</span>
                       <span>2</span>
                     </div>
-                    <div className="flex items-center gap-3 rounded-2xl border border-gray-200 px-4 py-3 text-gray-700 dark:border-white/10 dark:text-white/75">
-                      <span className="flex h-8 w-8 items-center justify-center rounded-full border border-gray-300 text-sm font-semibold dark:border-white/25">D</span>
+                    <div className="flex items-center gap-3 rounded-xl border border-gray-200/70 bg-white/80 px-3 py-2.5 text-gray-700 dark:border-white/10 dark:bg-white/[0.02] dark:text-white/75">
+                      <span className="flex h-7 w-7 items-center justify-center rounded-lg border border-gray-300/80 text-xs font-semibold dark:border-white/20">D</span>
                       <span>The limit does not exist</span>
                     </div>
                   </div>
                 </div>
 
-                <div className="flex items-center justify-between border-t border-gray-200/30 pt-4 dark:border-white/[0.05]">
-                  <span className="text-xs text-gray-500 dark:text-white/50">Example only · not an active quiz</span>
-                  <span className="rounded-full bg-gray-100/70 px-3 py-1.5 text-xs font-medium text-gray-700 dark:bg-white/[0.05] dark:text-white/70">2/10</span>
+                <div className="mt-5 flex items-center justify-between gap-3">
+                  <span className="text-xs font-medium text-gray-500 dark:text-white/50">2 of 10 questions</span>
+                  <Link
+                    to="/practice"
+                    className="inline-flex shrink-0 items-center gap-2 rounded-full bg-emerald-700 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:-translate-y-0.5 hover:bg-emerald-800 focus:outline-none focus:ring-2 focus:ring-emerald-600 focus:ring-offset-2 dark:bg-emerald-400 dark:text-black dark:hover:bg-emerald-300"
+                  >
+                    Try a set <ArrowRight className="h-4 w-4" aria-hidden="true" />
+                  </Link>
                 </div>
               </div>
             </div>
