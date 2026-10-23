@@ -10,7 +10,7 @@ import {
 } from "lucide-react";
 import Layout from "@/components/Layout.jsx";
 
-const DEMO_LIMIT_MATH = String.raw`\lim_{x \to 2} \frac{x^2 - 4}{x - 2}`;
+const DEMO_LIMIT_MATH = String.raw`\lim\limits_{x \to 2} \frac{x^2 - 4}{x - 2}`;
 
 export default function Index() {
   useEffect(() => {
@@ -80,7 +80,7 @@ export default function Index() {
                   to="/tutor"
                   className="inline-flex items-center justify-center gap-2 rounded-full border border-gray-300 bg-white/80 px-6 py-3.5 font-semibold text-gray-900 transition hover:-translate-y-0.5 hover:border-emerald-600 hover:text-emerald-800 focus:outline-none focus:ring-2 focus:ring-emerald-600 focus:ring-offset-2 dark:border-white/20 dark:bg-white/5 dark:text-white dark:hover:border-emerald-400 dark:hover:text-emerald-300"
                 >
-                  Ask your tutor <MessageSquare className="h-4 w-4" aria-hidden="true" />
+                  Ask your AI tutor <MessageSquare className="h-4 w-4" aria-hidden="true" />
                 </Link>
               </div>
 
@@ -110,7 +110,7 @@ export default function Index() {
                       </p>
                     </div>
                   </div>
-                  <span className="rounded-full border border-emerald-900/[0.04] bg-emerald-50/75 px-3 py-1 text-xs font-semibold text-emerald-800 dark:border-white/[0.04] dark:bg-emerald-400/[0.06] dark:text-emerald-300">
+                  <span className="rounded-full bg-emerald-50/75 px-3 py-1 text-xs font-semibold text-emerald-800 dark:bg-emerald-400/[0.06] dark:text-emerald-300">
                     AP CALCULUS AB
                   </span>
                 </div>
@@ -156,7 +156,7 @@ export default function Index() {
 
                 <div className="flex items-center justify-between border-t border-gray-200/30 pt-4 dark:border-white/[0.05]">
                   <span className="text-xs text-gray-500 dark:text-white/50">Example only · not an active quiz</span>
-                  <span className="rounded-full border border-gray-400/[0.04] bg-gray-100/70 px-3 py-1.5 text-xs font-medium text-gray-700 dark:border-white/[0.04] dark:bg-white/[0.05] dark:text-white/70">2/10</span>
+                  <span className="rounded-full bg-gray-100/70 px-3 py-1.5 text-xs font-medium text-gray-700 dark:bg-white/[0.05] dark:text-white/70">2/10</span>
                 </div>
               </div>
             </div>
