@@ -106,6 +106,10 @@ GOOGLE_AI_STUDIO_MODEL=gemini-2.5-flash
 Notes:
 - Do not expose API keys in client-side builds.  
 
+## Context.dev web search
+
+Web search in the tutor is optional. Add your Context.dev key to the server environment as `CONTEXT_DEV_API_KEY`. The key is only used by the server and must never be added to client-side variables. Tutor questions are sent to Context.dev only when the user turns on “Search the web with Context.dev”; that request searches for up to five English results and returns their links with the answer. The key is never committed to this repository.
+
 ## Build and Development
 ### Local Development
 Requirements: Node.js 20 or later.
