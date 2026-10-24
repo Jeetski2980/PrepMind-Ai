@@ -222,6 +222,7 @@ export default function Tutor() {
   const [isSpeaking, setIsSpeaking] = useState(false);
   const [shouldAutoScroll, setShouldAutoScroll] = useState(true);
   const [isFullScreen, setIsFullScreen] = useState(false);
+  const [useWebSearch, setUseWebSearch] = useState(false);
 
   const messagesContainerRef = useRef(null);
   const recognitionRef = useRef(null);
@@ -324,12 +325,12 @@ export default function Tutor() {
     setIsSpeaking(false);
   };
 
-  async function sendChat(userText, history = []) {
+  async function sendChat(userText, history = [], searchWeb = false) {
     try {
       const res = await fetch("/api/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ message: userText, history }),
+        body: JSON.stringify({ message: userText, history, useWeb: searchWeb }),
       });
       if (!res.ok) {
         const err = await res.json().catch(() => ({}));
@@ -341,6 +342,7 @@ export default function Tutor() {
       return {
         content: typeof reply === "string" ? reply : JSON.stringify(reply),
         truncated: Boolean(data?.truncated),
+        sources: Array.isArray(data?.sources) ? data.sources : [],
       };
     } catch (e) {
       return { content: `Sorry, I hit an error: ${String(e.message || e)}`, truncated: false };
@@ -369,11 +371,12 @@ export default function Tutor() {
           role: message.isUser ? "user" : "model",
           text: String(message.text ?? "").slice(0, 900),
         }));
-      const completion = await sendChat(userMessage.text, history);
+      const completion = await sendChat(userMessage.text, history, useWebSearch);
       const aiMessage = {
         id: Date.now() + 1,
         text: completion.content,
         truncated: completion.truncated,
+        sources: completion.sources,
         isUser: false,
         timestamp: new Date(),
       };
@@ -462,6 +465,20 @@ export default function Tutor() {
                             This answer reached the response limit. Ask me to continue from here.
                           </p>
                         )}
+                        {!message.isUser && Array.isArray(message.sources) && message.sources.length > 0 && (
+                          <div className="mt-4 border-t border-gray-200 pt-3 text-sm dark:border-white/10">
+                            <p className="mb-2 font-semibold text-gray-700 dark:text-white/80">Web sources</p>
+                            <ul className="space-y-1.5">
+                              {message.sources.map((source) => (
+                                <li key={source.url}>
+                                  <a href={source.url} target="_blank" rel="noreferrer" className="text-emerald-700 underline underline-offset-2 dark:text-emerald-300">
+                                    {source.title}
+                                  </a>
+                                </li>
+                              ))}
+                            </ul>
+                          </div>
+                        )}
                       </div>
                       {!message.isUser && (
                         <Button
@@ -513,6 +530,21 @@ export default function Tutor() {
 
             {/* Input Area */}
             <div className="border-t border-emerald-950/[0.08] bg-white/90 px-4 py-4 dark:border-white/10 dark:bg-black/80 sm:px-5">
+              <div className="mb-3">
+                <label className="flex cursor-pointer items-start gap-2 text-sm text-gray-700 dark:text-white/80">
+                  <input
+                    type="checkbox"
+                    checked={useWebSearch}
+                    onChange={(event) => setUseWebSearch(event.target.checked)}
+                    disabled={isLoading || !isChatReady}
+                    className="mt-0.5 accent-emerald-700"
+                  />
+                  <span>
+                    <span className="font-medium">Search the web with Context.dev</span>
+                    <span className="ml-2 text-xs text-gray-500 dark:text-white/50">Sends this question to Context.dev and uses up to 5 sources.</span>
+                  </span>
+                </label>
+              </div>
               <div className="flex items-end gap-3">
                 <div className="flex-1 relative">
                   <Textarea
