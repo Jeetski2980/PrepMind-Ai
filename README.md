@@ -100,23 +100,21 @@ Notes:
 ### Local Development
 Requirements: Node.js 20 or later.
 
-Install dependencies and start the local UI and API server together:
-```bash
-npm ci
-npm run dev
-```
+Start both services together from the project root with `npm run dev`.
 
 ### Production Build
 
-Install dependencies, build the frontend, and start the Express server from the project root:
+#### Frontend build
 ```bash
 npm ci
 npm run build
+```
+#### Backend build
+```bash
 npm start
 ```
 
 The Express server serves the built frontend and API from a single deployment.
-
 
 ## Privacy and Accessibility
 - No user accounts, databases, or analytics tracking  
