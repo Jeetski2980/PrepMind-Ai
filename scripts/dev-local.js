@@ -45,3 +45,4 @@ for (const child of children) {
 
 process.on("SIGINT", () => stop(0));
 process.on("SIGTERM", () => stop(0));
+
